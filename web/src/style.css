@@ -1,0 +1,279 @@
+:root {
+  --bg: #0f1216;
+  --card: #1a1f27;
+  --ink: #e8edf2;
+  --muted: #8a95a3;
+  --accent: #6fcf7f;
+  --gold: #f2c94c;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+#app { max-width: 640px; margin: 0 auto; padding: 16px; }
+
+/* ---- weather backdrop ---- */
+.farm {
+  border-radius: 16px;
+  padding: 16px;
+  transition: background 0.6s ease;
+}
+.weather-sunny { background: linear-gradient(160deg, #2a3550, #24405a 40%, #1f4a3a); }
+.weather-rainy { background: linear-gradient(160deg, #1b2230, #23303f 60%, #2a3340); }
+
+/* ---- hud ---- */
+.hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.coins { font-size: 22px; }
+.coins b { color: var(--gold); }
+.weather { color: var(--ink); font-size: 14px; opacity: 0.95; }
+.blocked-toggle {
+  background: #2b3340;
+  color: var(--ink);
+  border: 1px solid #3a4553;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.blocked-toggle.on { background: #3a4d63; border-color: #6f9fcf; }
+
+/* ---- level / xp ---- */
+.level {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.xpbar {
+  flex: 1;
+  height: 8px;
+  background: #10151c;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.xpfill { height: 100%; background: var(--accent); transition: width 0.4s ease; }
+
+/* ---- field ---- */
+.field {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+.plot {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 110px;
+  justify-content: space-between;
+}
+.plot-emoji { font-size: 40px; line-height: 1; }
+.plot-wilted .plot-emoji { filter: grayscale(0.3) brightness(0.9); animation: droop 2s ease-in-out infinite; }
+.plot-dead { opacity: 0.6; }
+.plot-mature { box-shadow: 0 0 0 2px var(--gold) inset; }
+@keyframes droop { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+
+.plot-status { font-size: 12px; color: var(--muted); }
+
+.act {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #2b3340;
+  color: var(--ink);
+  cursor: pointer;
+  width: 100%;
+}
+.act:disabled { opacity: 0.4; cursor: not-allowed; }
+.act.harvest { background: var(--gold); color: #26210a; font-weight: 600; border: none; }
+.act.clear { background: #4a2b2b; }
+
+/* "+" tile — plow a new field (same box metrics as .plot) */
+.plot-add {
+  background: rgba(111, 207, 127, 0.06);
+  border: 1px dashed rgba(111, 207, 127, 0.4);
+  color: var(--muted);
+  cursor: pointer;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.plot-add:hover:not(:disabled) { background: rgba(111, 207, 127, 0.12); border-color: var(--accent); }
+.plot-add:disabled { opacity: 0.4; cursor: not-allowed; }
+.plot-add-plus { font-size: 40px; line-height: 1; color: var(--accent); font-weight: 300; }
+.plot-add-cost { font-size: 12px; color: var(--muted); }
+
+.foot { margin-top: 16px; font-size: 12px; color: var(--muted); text-align: center; }
+
+/* ---- onboarding modal ---- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.modal {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.modal h1 { margin: 0 0 6px; font-size: 22px; }
+.modal p { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+.modal .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.modal select,
+.modal input[type="number"] {
+  background: #10151c;
+  color: var(--ink);
+  border: 1px solid #2a3340;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.modal input[type="number"] { width: 56px; }
+.days { display: flex; gap: 6px; flex-wrap: wrap; }
+.day { font-size: 12px; display: flex; align-items: center; gap: 3px; color: var(--muted); }
+#start {
+  margin-top: 18px;
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #0c1a10;
+  cursor: pointer;
+}
+
+/* ---- confirm dialog (remove crop) ---- */
+.confirm-backdrop { z-index: 2000; } /* above the tutorial overlay */
+.confirm-modal { max-width: 360px; }
+.confirm-msg { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.5; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.confirm-actions button { border-radius: 8px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+.confirm-cancel { background: #2b3340; color: var(--ink); border: 1px solid #3a4553; }
+.confirm-ok { background: #4a2b2b; color: var(--ink); border: 1px solid #6b3a3a; font-weight: 600; }
+.confirm-ok:hover { background: #5c3535; }
+
+/* ---- version badge ---- */
+#version-badge {
+  position: fixed;
+  right: 10px;
+  bottom: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.6;
+  cursor: pointer;
+  user-select: none;
+  z-index: 50;
+  transition: opacity 0.2s ease;
+}
+#version-badge:hover { opacity: 1; }
+
+/* ---- tutorial walkthrough ---- */
+.tut-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  /* The dimming is drawn by the highlight's huge box-shadow so the target stays
+     visible. The tour is non-blocking: pointer-events pass through so the farm
+     stays fully usable while the coach-marks are up (the bubble keeps its own
+     clicks for Go Next / Skip). */
+  background: transparent;
+  pointer-events: none;
+}
+.tut-highlight {
+  position: fixed;
+  z-index: 1001;
+  border-radius: 10px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  transition: left 0.2s ease, top 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+.tut-bubble {
+  position: fixed;
+  z-index: 1002;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.tut-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+.tut-body { font-size: 13px; line-height: 1.45; color: var(--muted); }
+.tut-body b { color: var(--ink); }
+.tut-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.tut-counter { font-size: 12px; color: var(--muted); margin-right: auto; }
+.tut-skip {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  font-size: 12px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.tut-skip:hover { color: var(--ink); }
+.tut-next {
+  background: var(--accent);
+  color: #0c1a10;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tut-arrow {
+  position: fixed;
+  z-index: 1003;
+  width: 14px;
+  height: 14px;
+  background: var(--card);
+  pointer-events: none;
+}
+/* Each variant shows only the two borders that form the visible point. */
+.tut-arrow-up { transform: rotate(45deg); border-left: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.tut-arrow-down { transform: rotate(45deg); border-right: 1px solid rgba(255, 255, 255, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.tut-arrow-left { transform: rotate(45deg); border-left: 1px solid rgba(255, 255, 255, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.tut-arrow-right { transform: rotate(45deg); border-right: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.1); }

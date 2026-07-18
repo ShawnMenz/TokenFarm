@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Generated builds and test output
+web-dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Local environment and package configuration
+.env
+.env.*
+!.env.example
+.npmrc
+
+# TokenFarm runtime state
+.tokenfarm/
+
+# Local agent runtime and planning data
+.claude/
+.codex/
+.playwright-mcp/
+.scratch/
+docs/
+
+# Logs, caches, and temporary files
+*.log
+.cache/
+.tmp/
+tmp/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
