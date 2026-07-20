@@ -76,6 +76,15 @@ export const TUTORIAL_STEPS: Step[] = [
     placement: 'top',
   },
   {
+    id: 'shop',
+    version: '0.2.0',
+    selector: '.shop',
+    fallbackSelector: '.shop-title',
+    title: '🛒 Seed Shop',
+    body: 'New in 0.2.0: buy seeds here — <b>Carrot, Wheat, Corn, Pumpkin</b> — then plant an owned seed on a field. Each crop has its own price, grow time, and XP.',
+    placement: 'top',
+  },
+  {
     id: 'foot',
     version: '0.1.0',
     selector: '.foot',

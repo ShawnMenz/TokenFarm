@@ -124,6 +124,89 @@ body {
 .plot-add-plus { font-size: 40px; line-height: 1; color: var(--accent); font-weight: 300; }
 .plot-add-cost { font-size: 12px; color: var(--muted); }
 
+/* Plant picker — one small button per owned seed on an empty field. */
+.plant-picker { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; width: 100%; }
+.act.plant {
+  width: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  font-size: 16px;
+}
+.seed-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+  padding: 0 5px;
+}
+
+/* ---- seed shop ---- */
+.shop { margin-top: 18px; }
+.shop-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+.shop-card {
+  position: relative; /* anchor for the hover tooltip */
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.shop-emoji { font-size: 30px; line-height: 1; }
+.shop-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+/* Price is the only detail shown by default — centered and emphasized. */
+.shop-price { font-size: 16px; font-weight: 700; color: var(--gold); margin: 2px 0; }
+/* Extra details (XP, grow time) stay hidden until the Buy button is hovered. */
+.shop-tip {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: #10151c;
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-size: 11px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+.shop-buy:hover + .shop-tip,
+.shop-buy:focus-visible + .shop-tip {
+  opacity: 1;
+  visibility: visible;
+}
+.shop-buy {
+  margin-top: 4px;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #0c1a10;
+  cursor: pointer;
+}
+.shop-buy:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .foot { margin-top: 16px; font-size: 12px; color: var(--muted); text-align: center; }
 
 /* ---- onboarding modal ---- */
@@ -164,6 +247,20 @@ body {
 .modal input[type="number"] { width: 56px; }
 .days { display: flex; gap: 6px; flex-wrap: wrap; }
 .day { font-size: 12px; display: flex; align-items: center; gap: 3px; color: var(--muted); }
+/* Collapsed group chip ("Weekdays" / "Weekend") — visually stronger than a day. */
+.day-group {
+  color: var(--ink);
+  font-weight: 600;
+  padding: 2px 8px;
+  border: 1px solid rgba(111, 207, 127, 0.5);
+  border-radius: 999px;
+  background: rgba(111, 207, 127, 0.1);
+}
+/* Inline validation hint for the empty-days case. */
+.day-error { margin: 6px 0 0; font-size: 12px; color: #e57373; }
+.day-error[hidden] { display: none; }
+/* Explanation of the selected difficulty's rules, under the dropdown. */
+.difficulty-note { margin: -4px 0 4px; font-size: 12px; line-height: 1.45; color: var(--muted); }
 #start {
   margin-top: 18px;
   width: 100%;
@@ -277,3 +374,104 @@ body {
 .tut-arrow-down { transform: rotate(45deg); border-right: 1px solid rgba(255, 255, 255, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 .tut-arrow-left { transform: rotate(45deg); border-left: 1px solid rgba(255, 255, 255, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 .tut-arrow-right { transform: rotate(45deg); border-right: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.1); }
+
+/* ---- developer mode ---- */
+/* Editable coin balance (HUD), only rendered when the server reports dev mode. */
+.coins-input {
+  width: 96px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+  background: #10151c;
+  border: 1px dashed #4a4020;
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+.coins-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+/* Bottom-center dev-only Restart button. Fixed to the viewport so the per-tick
+   repaint of #app never removes it. Styled distinctly as a developer control. */
+.dev-restart {
+  position: fixed;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 60;
+  background: #4a2b2b;
+  color: var(--ink);
+  border: 1px dashed #6b3a3a;
+  border-radius: 999px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+.dev-restart:hover { opacity: 1; background: #5c3535; }
+
+/* Shared dashed styling marks any dev-only editable control. */
+.lv-input, .xp-input, .weather-dev, .state-select {
+  background: #10151c;
+  color: var(--ink);
+  border: 1px dashed #4a4020;
+  border-radius: 6px;
+  padding: 1px 4px;
+  font: inherit;
+}
+.lv-input, .xp-input { width: 56px; }
+.lv-input:focus, .xp-input:focus, .weather-dev:focus, .state-select:focus,
+.growth-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.weather-dev { font-size: 12px; margin-left: 4px; }
+/* Per-plot dev controls under the plot's action row. */
+.plot-dev { display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: 100%; }
+.growth-input { width: 100%; accent-color: var(--accent); cursor: pointer; }
+.state-select { font-size: 11px; width: 100%; }
+
+/* Left-side dev "fake token flow" box. Fixed to the viewport (outside #app). */
+.dev-token-box {
+  position: fixed;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+  width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: var(--card);
+  border: 1px dashed #6b3a3a;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.dtb-title { font-size: 13px; font-weight: 600; color: var(--ink); }
+.dtb-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.dtb-field {
+  background: #10151c;
+  color: var(--ink);
+  border: 1px dashed #4a4020;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 13px;
+}
+.dtb-field:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.dtb-preview { font-size: 11px; color: var(--gold); min-height: 1.4em; }
+.dtb-inject {
+  margin-top: 2px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #0c1a10;
+  cursor: pointer;
+}
+.dtb-inject:hover { filter: brightness(1.08); }

@@ -61,6 +61,8 @@ function handleAction(action: string, body: any) {
   switch (action) {
     case 'plow':
       return engine.plow();
+    case 'buySeed':
+      return engine.buySeed(String(body.cropId));
     case 'plant':
       return engine.plant(Number(body.plotId), String(body.cropId));
     case 'harvest':
@@ -71,6 +73,22 @@ function handleAction(action: string, body: any) {
       return engine.onboard(body.difficulty, body.workingHours);
     case 'toggleBlocked':
       return engine.toggleBlocked();
+    case 'setCoins':
+      return engine.setCoins(Number(body.amount));
+    case 'setXp':
+      return engine.setXp(Number(body.amount));
+    case 'setLevel':
+      return engine.setLevel(Number(body.amount));
+    case 'setGrowth':
+      return engine.setGrowth(Number(body.plotId), Number(body.progress));
+    case 'setPlotState':
+      return engine.setPlotState(Number(body.plotId), String(body.state));
+    case 'setWeather':
+      return engine.setWeather(String(body.weather));
+    case 'injectTokens':
+      return engine.injectTokens(body);
+    case 'restart':
+      return engine.restart();
     default:
       return { ok: false, error: 'unknown-action' };
   }

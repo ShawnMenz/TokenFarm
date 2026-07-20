@@ -1,0 +1,18 @@
+{
+  "_about": "Canonical TokenFarm price record. Edit values here; they are loaded at startup by server/src/game/config.ts. coinCost is spent to buy a seed in the shop; xpReward is earned on harvest (XP is NOT a spendable currency). Crops are listed in ascending cost so the shop renders them in that order. xpLevelBands is the gradually-ascending XP-per-level curve: each band gives the XP needed for every level up through its throughLevel; levels above the last band hold at the last band's rate (no level cap). Add bands to raise it further.",
+  "plowCost": 300,
+  "conversionDivisor": 200,
+  "difficultyMultipliers": { "easy": 1.5, "normal": 1.0, "difficult": 0.5 },
+  "xpLevelBands": [
+    { "throughLevel": 10,  "xpPerLevel": 100 },
+    { "throughLevel": 30,  "xpPerLevel": 300 },
+    { "throughLevel": 60,  "xpPerLevel": 800 },
+    { "throughLevel": 100, "xpPerLevel": 2000 }
+  ],
+  "crops": {
+    "carrot":  { "name": "Carrot",  "emoji": "🥕", "coinCost": 500,  "growMinutes": 15, "xpReward": 5 },
+    "wheat":   { "name": "Wheat",   "emoji": "🌾", "coinCost": 1500, "growMinutes": 30, "xpReward": 10 },
+    "corn":    { "name": "Corn",    "emoji": "🌽", "coinCost": 2500, "growMinutes": 30, "xpReward": 12 },
+    "pumpkin": { "name": "Pumpkin", "emoji": "🎃", "coinCost": 6000, "growMinutes": 60, "xpReward": 25 }
+  }
+}

@@ -6,6 +6,7 @@ export type Weather = 'sunny' | 'rainy';
 // farm is protected. Sunny = working hours — growth happens and the wilt clock can
 // tick.
 export function weatherNow(state: GameState, now: number = Date.now()): Weather {
+  if (state.devWeather) return state.devWeather; // dev override wins over everything
   if (state.manualBlocked) return 'rainy';
   const d = new Date(now);
   const day = d.getDay();

@@ -4,6 +4,59 @@
 
 _Nothing yet._
 
+## [0.2.0] - 2026-07-20
+
+### Added
+
+- **Seed shop and inventory.** A shop now sells seeds into a per-crop inventory:
+  buy a seed with coins, then plant an owned seed on a plowed field. Planting
+  consumes a seed from stock rather than charging coins at plant time. The shop
+  panel shows each crop's price, XP reward, grow time, and how many you own, with a
+  hint on empty fields when you have no seeds yet.
+- **Three new crops.** Alongside Wheat 🌾 (1,500 coins), the farm now grows
+  Carrot 🥕 (500, fast, +5 XP), Corn 🌽 (2,500, +12 XP), and Pumpkin 🎃 (6,000,
+  slow, +25 XP) — a cheap-to-premium progression ladder. XP remains a harvest
+  reward only; it is not spent on anything yet.
+- **Canonical price record.** All priced values — seed costs, plow cost, the coin
+  conversion divisor, difficulty multipliers, the XP-per-level curve, and each
+  crop's grow time and XP reward — now live in one human-readable
+  [`server/src/game/prices.json`](server/src/game/prices.json), loaded at startup.
+  Tune the economy by editing that one file.
+- **Gradual leveling curve.** XP required per level now follows an ascending band
+  curve (`xpLevelBands` in `prices.json`) instead of a flat rate — early levels are
+  quick and higher levels cost progressively more, holding at the top band's rate
+  beyond it (no level cap). Add bands to raise it further.
+- **Developer mode.** Launching with `npm run dev` enables a developer mode whose
+  testing controls never appear in a `npm start` (user-mode) build. The mode is
+  decided by the npm entry point: `dev:server` sets `TOKENFARM_DEV=1`, and the
+  server reports the flag to the browser over the existing snapshot stream.
+  - **Adjustable game state.** Directly edit the coin balance, XP, and level;
+    override the weather (Auto / ☀️ Sunny / 🌧️ Rainy); and, per planted plot, drag
+    a growth-% slider (100% = ready) or force its state (growing / mature / wilted /
+    dead / empty). Every editable control survives the per-second refresh while
+    focused.
+  - **Fake token flow.** A left-side box takes `input_tokens`,
+    `cache_creation_input_tokens`, and `output_tokens`, previews the resulting coins
+    at the current conversion divisor and difficulty, and injects the burst through
+    the real ingestion path — useful for tuning `conversionDivisor`.
+  - **Restart button.** A bottom-center **Restart** control fully wipes progress
+    and returns to first-launch onboarding, while preserving log ingest offsets so
+    a restart does not re-tail and refund your entire token history.
+  - **Isolated save profile.** Developer mode uses its own `~/.tokenfarm-dev`
+    directory instead of the real `~/.tokenfarm`, so its edits/Restart never touch
+    your real game and — keeping separate ingest offsets — never consume your token
+    usage; `npm start` (user mode) never creates or reads the dev profile.
+  - All dev actions are enforced server-side and return `dev-only` in user mode, so
+    a production build cannot invoke them. The player-facing tutorial is unchanged,
+    since developer mode is a developer tool that is absent from user-mode builds.
+- **Smarter onboarding.** The working-days picker auto-groups into Weekdays /
+  Weekend / Everyday chips (defaulting to weekdays) and requires at least one day;
+  the difficulty picker uses friendlier labels with a plain-language explanation of
+  the coin ratio. The in-game footer summarizes working days with the same grouping.
+- **`TOKENFARM_PORT` override.** The game server port (default `8787`) can now be
+  set with `TOKENFARM_PORT`, so a second, isolated instance can run alongside a
+  primary one.
+
 ## [0.1.0] - 2026-07-17
 
 Initial playable release: the complete local TokenFarm loop, powered by Claude Code
@@ -61,8 +114,6 @@ and Codex activity.
   weather, coin-math, JSONL-tail, restart-offset, truncation, and concurrent-provider
   checks, plus TypeScript validation and a production build command.
 
-<!--
-When this project gains a git remote, wire the version headers to compare links, e.g.:
-[Unreleased]: https://github.com/OWNER/tokenfarm/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/OWNER/tokenfarm/releases/tag/v0.1.0
--->
+[Unreleased]: https://github.com/ShawnMenz/TokenFarm/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ShawnMenz/TokenFarm/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/ShawnMenz/TokenFarm/releases/tag/v0.1.0

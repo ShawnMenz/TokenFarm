@@ -1,7 +1,7 @@
 {
   "name": "tokenfarm",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Personal ambient idle-farm game fueled by coding-agent token usage.",
   "license": "MIT",
@@ -18,7 +18,7 @@
   },
   "scripts": {
     "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
-    "dev:server": "tsx watch server/src/index.ts",
+    "dev:server": "TOKENFARM_DEV=1 tsx watch server/src/index.ts",
     "dev:web": "vite",
     "build": "vite build",
     "start": "tsx server/src/index.ts",

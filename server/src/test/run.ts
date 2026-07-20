@@ -10,7 +10,9 @@ import {
   sumCodexUsage,
 } from '../ingest/codexAdapter.js';
 import { weatherNow } from '../game/weather.js';
-import { defaultState } from '../game/state.js';
+import { defaultState, stateDir } from '../game/state.js';
+import { CROPS, PLOW_COST, xpForLevel } from '../game/config.js';
+import { Engine } from '../game/engine.js';
 import type { TokenEvent } from '../ingest/types.js';
 
 let failures = 0;
@@ -25,6 +27,25 @@ function check(name: string, cond: boolean, detail = '') {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
+  console.log('State dir — dev vs user profile separation');
+  {
+    const savedDir = process.env.TOKENFARM_STATE_DIR;
+    const savedDev = process.env.TOKENFARM_DEV;
+    const home = os.homedir();
+    delete process.env.TOKENFARM_STATE_DIR;
+    delete process.env.TOKENFARM_DEV;
+    check('user mode → ~/.tokenfarm', stateDir() === path.join(home, '.tokenfarm'), `got ${stateDir()}`);
+    process.env.TOKENFARM_DEV = '1';
+    check('dev mode → ~/.tokenfarm-dev', stateDir() === path.join(home, '.tokenfarm-dev'), `got ${stateDir()}`);
+    process.env.TOKENFARM_STATE_DIR = '/tmp/explicit-override';
+    check('explicit TOKENFARM_STATE_DIR wins over dev', stateDir() === '/tmp/explicit-override');
+    // restore
+    if (savedDir === undefined) delete process.env.TOKENFARM_STATE_DIR;
+    else process.env.TOKENFARM_STATE_DIR = savedDir;
+    if (savedDev === undefined) delete process.env.TOKENFARM_DEV;
+    else process.env.TOKENFARM_DEV = savedDev;
+  }
+
   console.log('Ingestion — token summation');
   const usage = {
     input_tokens: 10,
@@ -226,6 +247,230 @@ async function main() {
     combinedEvents.reduce((total, event) => total + event.tokens, 0) === 327,
   );
   fs.rmSync(multiDir, { recursive: true, force: true });
+
+  console.log('Developer mode — engine actions');
+  // Isolate state to a temp dir so the Engine never reads or writes a real save.
+  const devDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokenfarm-dev-test-'));
+  const prevStateDir = process.env.TOKENFARM_STATE_DIR;
+  const prevDev = process.env.TOKENFARM_DEV;
+  process.env.TOKENFARM_STATE_DIR = devDir;
+  process.env.TOKENFARM_DEV = '1';
+
+  const engine = new Engine(); // constructor loads from the empty temp dir → defaults
+  check('snapshot devMode true under TOKENFARM_DEV=1', engine.snapshot().devMode === true);
+
+  engine.setCoins(4200);
+  check('setCoins sets the balance', engine.state.coins === 4200);
+  const coinsBefore = engine.state.coins;
+  check(
+    'setCoins rejects a negative amount',
+    engine.setCoins(-5).ok === false && engine.state.coins === coinsBefore,
+  );
+  check(
+    'setCoins rejects a non-finite amount',
+    engine.setCoins(Number('nope')).ok === false && engine.state.coins === coinsBefore,
+  );
+
+  // Seed progress, then restart and confirm a full wipe that keeps ingest offsets.
+  engine.state.xp = 55;
+  engine.state.level = 4;
+  engine.state.onboarded = true;
+  engine.state.plots.push({
+    id: 1,
+    cropId: 'wheat',
+    growthProgress: 0.5,
+    state: 'growing',
+    sunnyIdleSeconds: 0,
+  });
+  const offsetsRef = engine.state.ingestOffsets;
+  offsetsRef['/some/session.jsonl'] = 123;
+
+  check('restart succeeds in dev mode', engine.restart().ok === true);
+  check('restart resets coins', engine.state.coins === 0);
+  check('restart resets xp and level', engine.state.xp === 0 && engine.state.level === 1);
+  check('restart returns to onboarding', engine.snapshot().onboarded === false);
+  check('restart resets to a single field', engine.state.plots.length === 1);
+  check(
+    'restart preserves ingestOffsets object identity',
+    engine.state.ingestOffsets === offsetsRef,
+  );
+  check(
+    'restart preserves ingestOffsets contents',
+    engine.state.ingestOffsets['/some/session.jsonl'] === 123,
+  );
+
+  // Dev adjusters (flag still on). Plant a crop first for the plot-based setters.
+  engine.state.coins = 10000;
+  engine.buySeed('carrot');
+  const pid = engine.state.plots[0].id;
+  engine.plant(pid, 'carrot');
+
+  check('setXp sets xp', engine.setXp(250).ok === true && engine.state.xp === 250);
+  check('setXp rejects negative', engine.setXp(-1).error === 'invalid');
+  check('setLevel sets level', engine.setLevel(7).ok === true && engine.state.level === 7);
+  check('setLevel rejects <1', engine.setLevel(0).error === 'invalid');
+
+  check(
+    'setGrowth to 1 matures the plot',
+    engine.setGrowth(pid, 1).ok === true &&
+      engine.state.plots[0].state === 'mature' &&
+      engine.state.plots[0].growthProgress === 1,
+  );
+  check(
+    'setGrowth below 1 keeps it growing',
+    engine.setGrowth(pid, 0.4).ok === true &&
+      engine.state.plots[0].state === 'growing' &&
+      Math.abs(engine.state.plots[0].growthProgress - 0.4) < 1e-9,
+  );
+  engine.plow(); // append an empty plot
+  const emptyPid = engine.state.plots[engine.state.plots.length - 1].id;
+  check('setGrowth rejects a plot with no crop', engine.setGrowth(emptyPid, 0.5).error === 'no-crop');
+
+  check(
+    'setPlotState forces wilted',
+    engine.setPlotState(pid, 'wilted').ok === true && engine.state.plots[0].state === 'wilted',
+  );
+  check(
+    'setPlotState empty clears the plot',
+    engine.setPlotState(pid, 'empty').ok === true &&
+      engine.state.plots[0].state === 'empty' &&
+      engine.state.plots[0].cropId === null,
+  );
+  check('setPlotState rejects an invalid state', engine.setPlotState(pid, 'nonsense').error === 'invalid');
+
+  check(
+    'setWeather sunny sets the override',
+    engine.setWeather('sunny').ok === true && engine.state.devWeather === 'sunny',
+  );
+  const sundayEarly = new Date('2026-07-12T03:00:00').getTime(); // Sun 3am → normally rainy
+  check('weatherNow honors devWeather override', weatherNow(engine.state, sundayEarly) === 'sunny');
+  check(
+    'setWeather auto clears the override',
+    engine.setWeather('auto').ok === true && engine.state.devWeather === null,
+  );
+  check('setWeather rejects an invalid value', engine.setWeather('foggy').error === 'invalid');
+
+  // injectTokens runs a fake burst through the real ingestion math.
+  engine.state.coins = 0;
+  engine.state.difficulty = 'normal'; // ×1.0
+  const divisor = engine.snapshot().conversionDivisor;
+  check('snapshot exposes conversionDivisor', typeof divisor === 'number' && divisor > 0);
+  const inj = engine.injectTokens({
+    input_tokens: 100,
+    cache_creation_input_tokens: 50,
+    output_tokens: 30,
+  });
+  check(
+    'injectTokens sums the three fields and mints coins',
+    inj.ok === true && Math.abs(engine.state.coins - 180 / divisor) < 1e-9,
+  );
+  check('injectTokens marks the agent active', Date.now() - engine.state.lastActivityAt < 1000);
+  check('injectTokens rejects an all-zero burst', engine.injectTokens({ input_tokens: 0 }).error === 'no-tokens');
+  check(
+    'injectTokens rejects a negative field',
+    engine.injectTokens({ input_tokens: -5, output_tokens: 10 }).error === 'invalid',
+  );
+
+  // restart clears the weather override, then return to a clean state for the
+  // flag-off assertions below (coins back to 0).
+  engine.setWeather('rainy');
+  engine.restart();
+  check('restart clears devWeather', engine.state.devWeather === null);
+
+  // With the flag off both dev actions are refused and leave state untouched.
+  delete process.env.TOKENFARM_DEV;
+  check('snapshot devMode false when flag is off', engine.snapshot().devMode === false);
+  check(
+    'setCoins refused in user mode',
+    engine.setCoins(999).error === 'dev-only' && engine.state.coins === 0,
+  );
+  check('restart refused in user mode', engine.restart().error === 'dev-only');
+  check(
+    'injectTokens refused in user mode',
+    engine.injectTokens({ input_tokens: 100 }).error === 'dev-only' && engine.state.coins === 0,
+  );
+
+  fs.rmSync(devDir, { recursive: true, force: true });
+  if (prevStateDir === undefined) delete process.env.TOKENFARM_STATE_DIR;
+  else process.env.TOKENFARM_STATE_DIR = prevStateDir;
+  if (prevDev === undefined) delete process.env.TOKENFARM_DEV;
+  else process.env.TOKENFARM_DEV = prevDev;
+
+  console.log('Leveling — gradual XP band curve');
+  check('band 1 (Lv 1) needs 100', xpForLevel(1) === 100, `got ${xpForLevel(1)}`);
+  check('band 1 upper (Lv 10) needs 100', xpForLevel(10) === 100, `got ${xpForLevel(10)}`);
+  check('band 2 (Lv 11) needs 300', xpForLevel(11) === 300, `got ${xpForLevel(11)}`);
+  check('band 2 upper (Lv 30) needs 300', xpForLevel(30) === 300, `got ${xpForLevel(30)}`);
+  check('band 3 (Lv 31) needs 800', xpForLevel(31) === 800, `got ${xpForLevel(31)}`);
+  check('band 3 upper (Lv 60) needs 800', xpForLevel(60) === 800, `got ${xpForLevel(60)}`);
+  check('band 4 (Lv 61) needs 2000', xpForLevel(61) === 2000, `got ${xpForLevel(61)}`);
+  check('band 4 upper (Lv 100) needs 2000', xpForLevel(100) === 2000, `got ${xpForLevel(100)}`);
+  check('beyond last band holds at top rate (Lv 101)', xpForLevel(101) === 2000, `got ${xpForLevel(101)}`);
+  check('no level cap (Lv 9999) still 2000', xpForLevel(9999) === 2000, `got ${xpForLevel(9999)}`);
+  check('curve is non-decreasing', xpForLevel(10) <= xpForLevel(11) && xpForLevel(60) <= xpForLevel(61));
+
+  console.log('Shop — prices, buySeed, and planting');
+  check('prices load carrot at 500', CROPS.carrot?.cost === 500, `got ${CROPS.carrot?.cost}`);
+  check('prices load corn at 2500', CROPS.corn?.cost === 2500, `got ${CROPS.corn?.cost}`);
+  check('prices load pumpkin at 6000', CROPS.pumpkin?.cost === 6000, `got ${CROPS.pumpkin?.cost}`);
+  check('wheat price unchanged at 1500', CROPS.wheat?.cost === 1500, `got ${CROPS.wheat?.cost}`);
+  check('plow price unchanged at 300', PLOW_COST === 300, `got ${PLOW_COST}`);
+
+  const shopDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokenfarm-shop-test-'));
+  const prevShopStateDir = process.env.TOKENFARM_STATE_DIR;
+  process.env.TOKENFARM_STATE_DIR = shopDir;
+  const shopEngine = new Engine();
+  // Set coins directly (buySeed/plant are not dev-gated, but setCoins is).
+  shopEngine.state.coins = 1000;
+
+  check(
+    'buySeed deducts coins and adds to inventory',
+    shopEngine.buySeed('carrot').ok === true &&
+      shopEngine.state.coins === 500 &&
+      shopEngine.state.inventory.carrot === 1,
+  );
+  check(
+    'buySeed refuses when coins are insufficient',
+    shopEngine.buySeed('pumpkin').error === 'insufficient-coins' &&
+      shopEngine.state.coins === 500 &&
+      (shopEngine.state.inventory.pumpkin ?? 0) === 0,
+  );
+  check('buySeed rejects an unknown crop', shopEngine.buySeed('mango').error === 'invalid');
+
+  const plotId = shopEngine.state.plots[0].id;
+  check(
+    'plant consumes a seed from inventory (no coin charge)',
+    shopEngine.plant(plotId, 'carrot').ok === true &&
+      shopEngine.state.inventory.carrot === 0 &&
+      shopEngine.state.coins === 500 &&
+      shopEngine.state.plots[0].state === 'growing',
+  );
+
+  // Plow a second field, then confirm planting with no stock is refused.
+  shopEngine.state.coins = 1000;
+  shopEngine.plow(); // coins 700, appends an empty field
+  const freshPlot = shopEngine.state.plots[shopEngine.state.plots.length - 1].id;
+  check(
+    'plant refuses with no-seed when stock is 0',
+    shopEngine.plant(freshPlot, 'pumpkin').error === 'no-seed',
+  );
+  check(
+    'plant refuses on an occupied plot',
+    shopEngine.plant(plotId, 'corn').error === 'occupied',
+  );
+
+  // restart clears inventory (dev-gated: enable the flag just for this call).
+  shopEngine.state.coins = 5000;
+  shopEngine.buySeed('corn'); // own 1 corn
+  process.env.TOKENFARM_DEV = '1';
+  shopEngine.restart();
+  check('restart clears inventory', Object.keys(shopEngine.state.inventory).length === 0);
+  if (prevDev === undefined) delete process.env.TOKENFARM_DEV;
+  else process.env.TOKENFARM_DEV = prevDev;
+
+  fs.rmSync(shopDir, { recursive: true, force: true });
+  if (prevShopStateDir === undefined) delete process.env.TOKENFARM_STATE_DIR;
+  else process.env.TOKENFARM_STATE_DIR = prevShopStateDir;
 
   console.log('');
   if (failures) {
