@@ -9,17 +9,23 @@
 // they last completed (stored in localStorage). That makes every MINOR release
 // walk the player through just its new features.
 
+import { t } from './i18n.js';
+
 const STORAGE_KEY = 'tokenfarm.tutorialVersion';
 
 type Placement = 'auto' | 'top' | 'bottom' | 'left' | 'right';
+
+// Step copy is looked up through the i18n catalog by key so the tour renders in the
+// current language and updates live on a language switch (see refreshTutorialText).
+type MsgKey = Parameters<typeof t>[0];
 
 interface Step {
   id: string;
   version: string; // semver in which this step's feature was introduced
   selector: string; // target element in the game view
   fallbackSelector?: string; // used if `selector` isn't present
-  title: string;
-  body: string; // may contain simple <b> markup
+  titleKey: MsgKey;
+  bodyKey: MsgKey; // resolved copy may contain simple <b> markup
   placement?: Placement;
 }
 
@@ -30,40 +36,40 @@ export const TUTORIAL_STEPS: Step[] = [
     id: 'coins',
     version: '0.1.0',
     selector: '.coins',
-    title: '🪙 Coins',
-    body: 'Your currency. Every token your coding agent burns is converted into coins you spend here to plant crops.',
+    titleKey: 'tutCoinsTitle',
+    bodyKey: 'tutCoinsBody',
     placement: 'bottom',
   },
   {
     id: 'codex-income',
     version: '0.1.0',
     selector: '.coins',
-    title: '🤖 Two agents, one farm',
-    body: 'TokenFarm listens to both <b>Claude Code and Codex</b>. Input, cache-creation, and output tokens from either local agent flow into this same coin balance.',
+    titleKey: 'tutCodexTitle',
+    bodyKey: 'tutCodexBody',
     placement: 'bottom',
   },
   {
     id: 'weather',
     version: '0.1.0',
     selector: '.weather',
-    title: '☀️ Weather',
-    body: 'Weather tells the story. <b>Sunny + agent active</b> = crops grow. <b>Sunny + idle</b> = crops at risk. <b>Rainy</b> = rest time, farm protected.',
+    titleKey: 'tutWeatherTitle',
+    bodyKey: 'tutWeatherBody',
     placement: 'bottom',
   },
   {
     id: 'blocked',
     version: '0.1.0',
     selector: '.blocked-toggle',
-    title: "🌧️ I'm blocked",
-    body: "Waiting on something outside your control? Flip this on — it forces rainy weather so your crops won't wilt while you're stuck. Fairness, not cheating.",
+    titleKey: 'tutBlockedTitle',
+    bodyKey: 'tutBlockedBody',
     placement: 'bottom',
   },
   {
     id: 'level',
     version: '0.1.0',
     selector: '.level',
-    title: '⭐ Level & XP',
-    body: 'Harvesting mature crops earns XP. Fill the bar to level up and grow your farm.',
+    titleKey: 'tutLevelTitle',
+    bodyKey: 'tutLevelBody',
     placement: 'bottom',
   },
   {
@@ -71,8 +77,8 @@ export const TUTORIAL_STEPS: Step[] = [
     version: '0.1.0',
     selector: '.field',
     fallbackSelector: '.plot',
-    title: '🌾 Your plots',
-    body: 'Plant 🌾 when you can afford it, watch it grow through the stages, then Harvest when it reads <b>Ready!</b>',
+    titleKey: 'tutFieldTitle',
+    bodyKey: 'tutFieldBody',
     placement: 'top',
   },
   {
@@ -80,16 +86,16 @@ export const TUTORIAL_STEPS: Step[] = [
     version: '0.2.0',
     selector: '.shop',
     fallbackSelector: '.shop-title',
-    title: '🛒 Seed Shop',
-    body: 'New in 0.2.0: buy seeds here — <b>Carrot, Wheat, Corn, Pumpkin</b> — then plant an owned seed on a field. Each crop has its own price, grow time, and XP.',
+    titleKey: 'tutShopTitle',
+    bodyKey: 'tutShopBody',
     placement: 'top',
   },
   {
     id: 'foot',
     version: '0.1.0',
     selector: '.foot',
-    title: '⚙️ Difficulty & hours',
-    body: 'Your difficulty multiplier and working window. Crops grow during your working hours — you set these during onboarding.',
+    titleKey: 'tutFootTitle',
+    bodyKey: 'tutFootBody',
     placement: 'top',
   },
 ];
@@ -164,12 +170,12 @@ function buildOverlay() {
   const skip = document.createElement('button');
   skip.className = 'tut-skip';
   skip.type = 'button';
-  skip.textContent = 'Skip';
+  skip.textContent = t('tutSkip');
 
   const next = document.createElement('button');
   next.className = 'tut-next';
   next.type = 'button';
-  next.textContent = 'Go Next';
+  next.textContent = t('tutNext');
 
   footer.append(counter, skip, next);
   bubble.append(title, body, footer);
@@ -205,11 +211,25 @@ function showStep(i: number) {
     return showStep(index + 1);
   }
 
-  els.title.innerHTML = step.title;
-  els.body.innerHTML = step.body;
-  els.counter.textContent = `${index + 1} / ${queue.length}`;
-  els.next.textContent = index >= queue.length - 1 ? 'Done' : 'Go Next';
+  applyStepText();
   reposition();
+}
+
+// Sets the bubble's copy from the current step + language. Split out so a language
+// switch mid-tour can re-apply it without advancing the step (refreshTutorialText).
+function applyStepText() {
+  const step = queue[index];
+  if (!step || !els) return;
+  els.title.innerHTML = t(step.titleKey);
+  els.body.innerHTML = t(step.bodyKey);
+  els.counter.textContent = `${index + 1} / ${queue.length}`;
+  els.next.textContent = index >= queue.length - 1 ? t('tutDone') : t('tutNext');
+  els.skip.textContent = t('tutSkip');
+}
+
+/** Re-render the live tour's copy in the current language; no-op when inactive. */
+export function refreshTutorialText() {
+  if (els) applyStepText();
 }
 
 // Positions the highlight ring, bubble, and arrow against the current target.

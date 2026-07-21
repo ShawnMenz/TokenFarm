@@ -1,22 +1,21 @@
 import type { Snapshot } from './api.js';
-
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+import { t, cropName, difficultyName, difficultyLabel, dayLabel } from './i18n.js';
 
 function plotVisual(plot: any, crops: any): { emoji: string; label: string } {
   switch (plot.state) {
     case 'empty':
-      return { emoji: '🟫', label: 'Field' };
+      return { emoji: '🟫', label: t('plotField') };
     case 'growing': {
       const p = plot.growthProgress;
       const emoji = p < 0.34 ? '🌱' : p < 0.67 ? '🌿' : '🌾';
       return { emoji, label: `${Math.floor(p * 100)}%` };
     }
     case 'mature':
-      return { emoji: crops?.[plot.cropId]?.emoji ?? '🌾', label: 'Ready!' };
+      return { emoji: crops?.[plot.cropId]?.emoji ?? '🌾', label: t('plotReady') };
     case 'wilted':
-      return { emoji: '🥀', label: 'Wilting' };
+      return { emoji: '🥀', label: t('plotWilting') };
     case 'dead':
-      return { emoji: '💀', label: 'Dead' };
+      return { emoji: '💀', label: t('plotDead') };
     default:
       return { emoji: '❔', label: '' };
   }
@@ -29,11 +28,11 @@ export function renderGame(snap: Snapshot): string {
   const weatherText =
     snap.weather === 'sunny'
       ? snap.active
-        ? 'Sunny · agent active — crops growing'
-        : 'Sunny · idle — crops at risk'
+        ? t('weatherSunnyActive')
+        : t('weatherSunnyIdle')
       : snap.manualBlocked
-        ? 'Rainy · blocked — farm protected'
-        : 'Rainy · rest time — farm protected';
+        ? t('weatherRainyBlocked')
+        : t('weatherRainyRest');
 
   const xpNeed = snap.xpNeed ?? snap.level * 100;
   const xpPct = Math.min(100, Math.floor((snap.xp / xpNeed) * 100));
@@ -42,14 +41,14 @@ export function renderGame(snap: Snapshot): string {
 
   // In developer mode the coin balance is directly editable (see main.ts).
   const coinsHud = dev
-    ? `<div class="coins">🪙 <input class="coins-input dev-input" data-dev-field="coins" type="number" min="0" step="1" value="${snap.coins}" aria-label="Set coins (dev)"></div>`
+    ? `<div class="coins">🪙 <input class="coins-input dev-input" data-dev-field="coins" type="number" min="0" step="1" value="${snap.coins}" aria-label="${t('ariaSetCoins')}"></div>`
     : `<div class="coins">🪙 <b>${snap.coins}</b></div>`;
 
   // Dev-only weather override select (Auto / Sunny / Rainy).
   const weatherOverride = snap.devWeather ?? 'auto';
   const weatherDevControl = dev
-    ? `<select class="dev-input weather-dev" data-dev-field="weather" aria-label="Override weather (dev)">
-         ${[['auto', 'Auto'], ['sunny', '☀️ Sunny'], ['rainy', '🌧️ Rainy']]
+    ? `<select class="dev-input weather-dev" data-dev-field="weather" aria-label="${t('ariaOverrideWeather')}">
+         ${[['auto', t('weatherAuto')], ['sunny', t('weatherSunny')], ['rainy', t('weatherRainy')]]
            .map(([v, l]) => `<option value="${v}" ${weatherOverride === v ? 'selected' : ''}>${l}</option>`)
            .join('')}
        </select>`
@@ -58,9 +57,9 @@ export function renderGame(snap: Snapshot): string {
   // Dev-only editable level + XP.
   const levelBar = dev
     ? `<div class="level">
-         <span>Lv <input class="dev-input lv-input" data-dev-field="level" type="number" min="1" step="1" value="${snap.level}" aria-label="Set level (dev)"></span>
+         <span>Lv <input class="dev-input lv-input" data-dev-field="level" type="number" min="1" step="1" value="${snap.level}" aria-label="${t('ariaSetLevel')}"></span>
          <div class="xpbar"><div class="xpfill" style="width:${xpPct}%"></div></div>
-         <span class="xptext"><input class="dev-input xp-input" data-dev-field="xp" type="number" min="0" step="1" value="${snap.xp}" aria-label="Set XP (dev)">/${xpNeed} XP</span>
+         <span class="xptext"><input class="dev-input xp-input" data-dev-field="xp" type="number" min="0" step="1" value="${snap.xp}" aria-label="${t('ariaSetXp')}">/${xpNeed} XP</span>
        </div>`
     : `<div class="level">
          <span>Lv ${snap.level}</span>
@@ -80,18 +79,16 @@ export function renderGame(snap: Snapshot): string {
           ? `<div class="plant-picker">${owned
               .map(
                 (c) =>
-                  `<button class="act plant" data-action="plant" data-plot="${plot.id}" data-crop="${c.id}" title="Plant ${c.name} (${inventory[c.id]} in stock)">${c.emoji}<span class="seed-count">${inventory[c.id]}</span></button>`,
+                  `<button class="act plant" data-action="plant" data-plot="${plot.id}" data-crop="${c.id}" title="${t('plantTitle', cropName(c.id, c.name), inventory[c.id])}">${c.emoji}<span class="seed-count">${inventory[c.id]}</span></button>`,
               )
               .join('')}</div>`
-          : `<span class="plot-status">Buy seeds ↓</span>`;
+          : `<span class="plot-status">${t('buySeeds')}</span>`;
       } else if (plot.state === 'mature') {
         const rc = snap.crops?.[plot.cropId];
-        btn = `<button class="act harvest" data-action="harvest" data-plot="${plot.id}">Harvest (+${
-          rc?.xpReward ?? 0
-        } XP)</button>`;
+        btn = `<button class="act harvest" data-action="harvest" data-plot="${plot.id}">${t('harvest', rc?.xpReward ?? 0)}</button>`;
       } else if (plot.state === 'wilted' || plot.state === 'dead') {
         // Wilting crops can still recover, so removing is confirmed on the client.
-        btn = `<button class="act clear" data-action="clear" data-plot="${plot.id}" data-state="${plot.state}">Remove</button>`;
+        btn = `<button class="act clear" data-action="clear" data-plot="${plot.id}" data-state="${plot.state}">${t('remove')}</button>`;
       } else {
         btn = `<span class="plot-status">${v.label}</span>`;
       }
@@ -99,8 +96,8 @@ export function renderGame(snap: Snapshot): string {
       const devPlot =
         dev && plot.cropId
           ? `<div class="plot-dev">
-               <input class="dev-input growth-input" type="range" min="0" max="100" value="${Math.round((plot.growthProgress ?? 0) * 100)}" data-dev-field="growth" data-plot="${plot.id}" aria-label="Set growth % (dev)">
-               <select class="dev-input state-select" data-dev-field="plotState" data-plot="${plot.id}" aria-label="Set plot state (dev)">
+               <input class="dev-input growth-input" type="range" min="0" max="100" value="${Math.round((plot.growthProgress ?? 0) * 100)}" data-dev-field="growth" data-plot="${plot.id}" aria-label="${t('ariaSetGrowth')}">
+               <select class="dev-input state-select" data-dev-field="plotState" data-plot="${plot.id}" aria-label="${t('ariaSetPlotState')}">
                  ${['growing', 'mature', 'wilted', 'dead', 'empty']
                    .map((s) => `<option value="${s}" ${plot.state === s ? 'selected' : ''}>${s}</option>`)
                    .join('')}
@@ -125,25 +122,25 @@ export function renderGame(snap: Snapshot): string {
       return `
         <div class="shop-card">
           <div class="shop-emoji">${c.emoji}</div>
-          <div class="shop-name">${c.name}${owned ? ` <span class="seed-count">${owned}</span>` : ''}</div>
+          <div class="shop-name">${cropName(c.id, c.name)}${owned ? ` <span class="seed-count">${owned}</span>` : ''}</div>
           <div class="shop-price">🪙 ${c.cost}</div>
-          <button class="shop-buy" data-action="buySeed" data-crop="${c.id}" ${afford ? '' : 'disabled'}>Buy</button>
-          <div class="shop-tip" role="tooltip">+${c.xpReward} XP · ${growMin}m grow</div>
+          <button class="shop-buy" data-action="buySeed" data-crop="${c.id}" ${afford ? '' : 'disabled'}>${t('shopBuy')}</button>
+          <div class="shop-tip" role="tooltip">${t('shopTip', c.xpReward, growMin)}</div>
         </div>`;
     })
     .join('');
   const shop = `
     <section class="shop">
-      <div class="shop-title">🛒 Seed Shop</div>
+      <div class="shop-title">${t('seedShop')}</div>
       <div class="shop-grid">${shopCards}</div>
     </section>`;
 
   // The "+" tile plows a brand-new field. Always present — the farm grows without limit.
   const canPlow = snap.coins >= snap.plowCost;
   const addTile = `
-    <button class="plot plot-add" data-action="plow" ${canPlow ? '' : 'disabled'} aria-label="Plow a new field">
+    <button class="plot plot-add" data-action="plow" ${canPlow ? '' : 'disabled'} aria-label="${t('ariaPlow')}">
       <span class="plot-add-plus">+</span>
-      <span class="plot-add-cost">Plow (${snap.plowCost})</span>
+      <span class="plot-add-cost">${t('plow', snap.plowCost)}</span>
     </button>`;
 
   return `
@@ -152,7 +149,7 @@ export function renderGame(snap: Snapshot): string {
         ${coinsHud}
         <div class="weather">${weatherIcon} ${weatherText} ${weatherDevControl}</div>
         <button class="blocked-toggle ${snap.manualBlocked ? 'on' : ''}" data-action="toggleBlocked">
-          ${snap.manualBlocked ? '🌧️ Blocked: ON' : "I'm blocked"}
+          ${snap.manualBlocked ? t('blockedOn') : t('blockedOff')}
         </button>
       </header>
 
@@ -163,8 +160,8 @@ export function renderGame(snap: Snapshot): string {
       ${shop}
 
       <footer class="foot">
-        Difficulty: <b>${snap.difficulty}</b> ·
-        Hours: ${snap.workingHours.startHour}:00–${snap.workingHours.endHour}:00 ·
+        ${t('footDifficulty')} <b>${difficultyName(snap.difficulty)}</b> ·
+        ${t('footHours')} ${snap.workingHours.startHour}:00–${snap.workingHours.endHour}:00 ·
         ${formatDays(snap.workingHours.days as number[])}
       </footer>
     </div>`;
@@ -180,10 +177,10 @@ const ALL_DAYS = [1, 2, 3, 4, 5, 6, 0]; // every day, in display order
 // (weekday block then weekend block, matching the selector's order).
 export function formatDays(days: number[]): string {
   const has = (group: number[]) => group.every((d) => days.includes(d));
-  if (has(ALL_DAYS)) return 'Everyday';
+  if (has(ALL_DAYS)) return t('everyday');
   const parts: string[] = [];
-  parts.push(...(has(WEEKDAYS) ? ['Weekdays'] : WEEKDAYS.filter((d) => days.includes(d)).map((d) => DAY_LABELS[d])));
-  parts.push(...(has(WEEKEND) ? ['Weekend'] : WEEKEND.filter((d) => days.includes(d)).map((d) => DAY_LABELS[d])));
+  parts.push(...(has(WEEKDAYS) ? [t('weekdays')] : WEEKDAYS.filter((d) => days.includes(d)).map((d) => dayLabel(d))));
+  parts.push(...(has(WEEKEND) ? [t('weekend')] : WEEKEND.filter((d) => days.includes(d)).map((d) => dayLabel(d))));
   return parts.join(' ') || '—';
 }
 
@@ -196,43 +193,31 @@ export function renderDaySelector(selected: number[]): string {
   const dayChip = (d: number) =>
     `<label class="day"><input type="checkbox" data-day="${d}" ${
       selected.includes(d) ? 'checked' : ''
-    }/>${DAY_LABELS[d]}</label>`;
+    }/>${dayLabel(d)}</label>`;
   const groupChip = (id: string, label: string) =>
     `<label class="day day-group"><input type="checkbox" data-group="${id}" checked/>${label}</label>`;
 
   // Every day selected collapses to a single "Everyday" chip.
-  if (has(ALL_DAYS)) return groupChip('everyday', 'Everyday');
+  if (has(ALL_DAYS)) return groupChip('everyday', t('everyday'));
 
-  const weekdayPart = has(WEEKDAYS) ? groupChip('weekdays', 'Weekdays') : WEEKDAYS.map(dayChip).join('');
-  const weekendPart = has(WEEKEND) ? groupChip('weekend', 'Weekend') : WEEKEND.map(dayChip).join('');
+  const weekdayPart = has(WEEKDAYS) ? groupChip('weekdays', t('weekdays')) : WEEKDAYS.map(dayChip).join('');
+  const weekendPart = has(WEEKEND) ? groupChip('weekend', t('weekend')) : WEEKEND.map(dayChip).join('');
   return weekdayPart + weekendPart;
 }
-
-// Nifty difficulty labels for the dropdown (no multiplier shown here — see the
-// explanation blurb below the select).
-export const DIFFICULTY_LABEL: Record<string, string> = {
-  easy: "C'mon, I'm just here to chill",
-  normal: 'Give me an honest day’s work',
-  difficult: 'Make me earn every token',
-};
 
 // Plain-language rules for the selected difficulty. The coin ratio is passed in
 // from the snapshot so it stays sourced from prices.json.
 export function difficultyBlurb(id: string, mult: number): string {
-  const flavor: Record<string, string> = {
-    easy: 'the most generous rate. Kick back and let the farm flourish.',
-    normal: 'the standard, balanced pace.',
-    difficult: 'currency is scarce — for the true grinders.',
-  };
-  const name = id === 'difficult' ? 'Hard' : id.charAt(0).toUpperCase() + id.slice(1);
-  return `${name} — you earn coins at a ×${mult.toFixed(1)} ratio, ${flavor[id] ?? ''}`;
+  const flavor =
+    id === 'easy' ? t('diffFlavorEasy') : id === 'difficult' ? t('diffFlavorDifficult') : t('diffFlavorNormal');
+  return t('difficultyBlurb', difficultyName(id), mult.toFixed(1), flavor);
 }
 
 export function renderOnboarding(snap: Snapshot): string {
   const difficultyOptions = ['easy', 'normal', 'difficult']
     .map(
       (id) =>
-        `<option value="${id}" ${id === 'normal' ? 'selected' : ''}>${DIFFICULTY_LABEL[id]}</option>`,
+        `<option value="${id}" ${id === 'normal' ? 'selected' : ''}>${difficultyLabel(id)}</option>`,
     )
     .join('');
   const mults = snap.difficultyMultipliers as Record<string, number>;
@@ -240,26 +225,26 @@ export function renderOnboarding(snap: Snapshot): string {
   return `
     <div class="modal-backdrop">
       <div class="modal">
-        <h1>🌱 Welcome to TokenFarm</h1>
-        <p>Your coding-agent tokens are your currency. Set up your farm.</p>
+        <h1>${t('welcomeTitle')}</h1>
+        <p>${t('welcomeSub')}</p>
 
-        <label class="row">Difficulty
+        <label class="row">${t('onbDifficulty')}
           <select id="difficulty">${difficultyOptions}</select>
         </label>
         <div id="difficulty-note" class="difficulty-note">${difficultyBlurb('normal', mults?.normal ?? 1)}</div>
 
-        <div class="row">Working hours
+        <div class="row">${t('onbWorkingHours')}
           <span>
             <input id="startHour" type="number" min="0" max="23" value="${snap.workingHours.startHour}" /> :00
-            &nbsp;to&nbsp;
+            &nbsp;${t('onbTo')}&nbsp;
             <input id="endHour" type="number" min="1" max="24" value="${snap.workingHours.endHour}" /> :00
           </span>
         </div>
 
-        <div class="row">Working days<div id="day-selector" class="days">${renderDaySelector(WEEKDAYS)}</div></div>
-        <div id="day-error" class="day-error" hidden>Pick at least one working day.</div>
+        <div class="row">${t('onbWorkingDays')}<div id="day-selector" class="days">${renderDaySelector(WEEKDAYS)}</div></div>
+        <div id="day-error" class="day-error" hidden>${t('onbDayError')}</div>
 
-        <button id="start">Start farming ☀️</button>
+        <button id="start">${t('onbStart')}</button>
       </div>
     </div>`;
 }

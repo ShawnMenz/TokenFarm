@@ -299,6 +299,28 @@ body {
 }
 #version-badge:hover { opacity: 1; }
 
+/* ---- language toggle ---- */
+/* Sits just left of the version badge, sharing its muted, fixed-corner styling. */
+#lang-toggle {
+  position: fixed;
+  right: 54px;
+  bottom: 8px;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--muted);
+  border-radius: 999px;
+  padding: 3px 8px;
+  opacity: 0.6;
+  cursor: pointer;
+  user-select: none;
+  z-index: 50;
+  transition: opacity 0.2s ease;
+}
+#lang-toggle:hover { opacity: 1; }
+
 /* ---- tutorial walkthrough ---- */
 .tut-backdrop {
   position: fixed;

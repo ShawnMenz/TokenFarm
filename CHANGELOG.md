@@ -1,8 +1,27 @@
 # Changelog
 
+**English** | [简体中文](CHANGELOG.zh-CN.md)
+
 ## [Unreleased]
 
 _Nothing yet._
+
+## [0.2.1] - 2026-07-20
+
+### Added
+
+- **Simplified-Chinese localization.** The entire browser interface — HUD, weather,
+  plots, seed shop, onboarding, guided tutorial, and developer controls — can now
+  render in 简体中文. Crop names are translated in the browser (胡萝卜 / 小麦 / 玉米 /
+  南瓜), keeping the server/web boundary intact.
+- **In-app language toggle.** A bottom-right **中文 / EN** button switches the whole
+  UI between English and Chinese instantly and re-renders the live view (including an
+  open tutorial). The choice persists in browser `localStorage` under
+  `tokenfarm.lang`; English is the default on first load.
+- **Bilingual documentation.** The README and this changelog now ship Chinese
+  counterparts — [`README.zh-CN.md`](README.zh-CN.md) and
+  [`CHANGELOG.zh-CN.md`](CHANGELOG.zh-CN.md) — with a language selector at the top of
+  each file.
 
 ## [0.2.0] - 2026-07-20
 
@@ -114,6 +133,7 @@ and Codex activity.
   weather, coin-math, JSONL-tail, restart-offset, truncation, and concurrent-provider
   checks, plus TypeScript validation and a production build command.
 
-[Unreleased]: https://github.com/ShawnMenz/TokenFarm/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ShawnMenz/TokenFarm/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/ShawnMenz/TokenFarm/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ShawnMenz/TokenFarm/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ShawnMenz/TokenFarm/releases/tag/v0.1.0

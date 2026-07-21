@@ -1,6 +1,7 @@
 import { action, subscribe, type Snapshot } from './api.js';
 import { renderGame, renderOnboarding, renderDaySelector, difficultyBlurb } from './render.js';
-import { maybeStartTutorial, repositionTutorial, replayTutorial } from './tutorial.js';
+import { maybeStartTutorial, repositionTutorial, replayTutorial, refreshTutorialText } from './tutorial.js';
+import { getLang, setLang, onLangChange, t } from './i18n.js';
 
 const app = document.getElementById('app')!;
 let latest: Snapshot | null = null;
@@ -12,6 +13,11 @@ if (badge) {
   badge.textContent = `v ${__APP_VERSION__}`;
   badge.addEventListener('click', () => replayTutorial());
 }
+
+// Language toggle (beside the badge). Flips English⇄中文 and persists the choice;
+// the onLangChange handler below re-renders everything into the new language.
+const langToggle = document.getElementById('lang-toggle');
+langToggle?.addEventListener('click', () => setLang(getLang() === 'en' ? 'zh' : 'en'));
 
 function devInputFocused(): boolean {
   const active = document.activeElement;
@@ -92,13 +98,10 @@ function paintOnboarding(snap: Snapshot) {
 const devRestartBtn = document.createElement('button');
 devRestartBtn.className = 'dev-restart';
 devRestartBtn.type = 'button';
-devRestartBtn.textContent = '↻ Restart';
+devRestartBtn.textContent = t('devRestart');
 devRestartBtn.style.display = 'none';
 devRestartBtn.addEventListener('click', async () => {
-  const ok = await confirmDialog(
-    'Restart the game? This wipes all progress and returns to setup.',
-    'Restart',
-  );
+  const ok = await confirmDialog(t('restartConfirm'), t('restartLabel'));
   if (ok) await action('restart');
 });
 document.body.appendChild(devRestartBtn);
@@ -109,13 +112,15 @@ document.body.appendChild(devRestartBtn);
 const devTokenBox = document.createElement('div');
 devTokenBox.className = 'dev-token-box';
 devTokenBox.style.display = 'none';
+// Field names are the literal provider API keys, so they stay untranslated; only
+// the title, preview, and button are localized (refreshed in applyStaticLabels).
 devTokenBox.innerHTML = `
-  <div class="dtb-title">🧪 Fake token flow</div>
+  <div class="dtb-title">${t('devTokenTitle')}</div>
   <label class="dtb-row">input_tokens<input class="dtb-in dtb-field" type="number" min="0" step="1" value="0"></label>
   <label class="dtb-row">cache_creation_input_tokens<input class="dtb-cc dtb-field" type="number" min="0" step="1" value="0"></label>
   <label class="dtb-row">output_tokens<input class="dtb-out dtb-field" type="number" min="0" step="1" value="0"></label>
   <div class="dtb-preview"></div>
-  <button class="dtb-inject" type="button">Inject →</button>`;
+  <button class="dtb-inject" type="button">${t('devTokenInject')}</button>`;
 document.body.appendChild(devTokenBox);
 const dtbIn = devTokenBox.querySelector('.dtb-in') as HTMLInputElement;
 const dtbCc = devTokenBox.querySelector('.dtb-cc') as HTMLInputElement;
@@ -133,7 +138,7 @@ function updateTokenPreview(): void {
   const divisor = snap?.conversionDivisor ?? 100;
   const mult = snap?.difficultyMultipliers?.[snap?.difficulty] ?? 1;
   const coins = (sum * mult) / divisor;
-  dtbPreview.textContent = `= ${sum.toLocaleString()} tokens → +${coins.toFixed(2)} coins (÷${divisor}, ×${mult})`;
+  dtbPreview.textContent = t('devTokenPreview', sum.toLocaleString(), coins.toFixed(2), divisor, mult);
 }
 devTokenBox.addEventListener('input', updateTokenPreview);
 devTokenBox.querySelector('.dtb-inject')!.addEventListener('click', async () => {
@@ -144,6 +149,32 @@ devTokenBox.querySelector('.dtb-inject')!.addEventListener('click', async () => 
   });
 });
 updateTokenPreview();
+
+// Refresh the persistent, body-level controls (which live outside #app and so are
+// not repainted each tick) into the current language.
+function applyStaticLabels() {
+  devRestartBtn.textContent = t('devRestart');
+  (devTokenBox.querySelector('.dtb-title') as HTMLElement).textContent = t('devTokenTitle');
+  (devTokenBox.querySelector('.dtb-inject') as HTMLElement).textContent = t('devTokenInject');
+  if (langToggle) langToggle.textContent = t('langToggle');
+  updateTokenPreview();
+}
+
+// On a language switch, re-render the active view immediately (don't wait for the
+// next SSE tick), refresh the out-of-#app controls, and update the live tour.
+onLangChange(() => {
+  applyStaticLabels();
+  refreshTutorialText();
+  if (latest) {
+    if (mode === 'onboarding') paintOnboarding(latest);
+    else if (mode === 'game') paintGame(latest);
+  }
+});
+
+// Apply the persisted (or default) language on load: sets <html lang>, the toggle
+// label, and the dev-control labels. #app itself already renders in the stored
+// language because render.ts reads it directly.
+setLang(getLang());
 
 subscribe((snap) => {
   latest = snap;
@@ -208,7 +239,7 @@ app.addEventListener('keydown', (ev) => {
 
 // A small styled yes/no dialog. Lives on document.body (outside #app), so the
 // per-tick repaint of #app can't wipe it. Resolves true on confirm, false otherwise.
-function confirmDialog(message: string, confirmLabel = 'Remove'): Promise<boolean> {
+function confirmDialog(message: string, confirmLabel: string = t('remove')): Promise<boolean> {
   return new Promise((resolve) => {
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop confirm-backdrop';
@@ -216,7 +247,7 @@ function confirmDialog(message: string, confirmLabel = 'Remove'): Promise<boolea
       <div class="modal confirm-modal">
         <p class="confirm-msg"></p>
         <div class="confirm-actions">
-          <button class="confirm-cancel" type="button">Cancel</button>
+          <button class="confirm-cancel" type="button">${t('confirmCancel')}</button>
           <button class="confirm-ok" type="button"></button>
         </div>
       </div>`;
@@ -256,9 +287,7 @@ app.addEventListener('click', async (ev) => {
     await action('harvest', { plotId: Number(btn.dataset.plot) });
   } else if (name === 'clear') {
     const wilting = btn.dataset.state === 'wilted';
-    const message = wilting
-      ? 'This crop is wilting — it could still recover if your agent gets active again. Remove it anyway? The plot returns to an empty field.'
-      : 'Remove this dead crop? The plot returns to an empty field.';
+    const message = wilting ? t('clearWilting') : t('clearDead');
     if (await confirmDialog(message)) {
       await action('clear', { plotId: Number(btn.dataset.plot) });
     }

@@ -1,5 +1,7 @@
 # 🌾 TokenFarm
 
+**English** | [简体中文](README.zh-CN.md)
+
 [![CI](https://github.com/ShawnMenz/TokenFarm/actions/workflows/ci.yml/badge.svg)](https://github.com/ShawnMenz/TokenFarm/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -11,9 +13,20 @@ The game runs quietly beside a terminal. Recent agent activity acts like sunligh
 crops grow while you work, begin to wilt after generous stretches of working-hours
 inactivity, and remain protected during rest time.
 
-> Status: **v0.2.0 — seed shop, three new crops, a gradual leveling curve, and an
-> expanded developer mode, on top of the complete v0.1.0 loop.** See
-> [the changelog](CHANGELOG.md).
+> Status: **v0.2.1 — full Simplified-Chinese interface with an in-app English/中文
+> toggle, on top of the v0.2.0 seed shop, new crops, gradual leveling, and expanded
+> developer mode.** See [the changelog](CHANGELOG.md).
+
+## New in v0.2.1
+
+- **Simplified-Chinese interface.** The entire UI — HUD, weather, plots, seed shop,
+  onboarding, tutorial, and developer controls — is fully localized into 简体中文.
+- **In-app language toggle.** A bottom-right **中文 / EN** button switches the whole
+  interface between English and Chinese instantly; your choice is remembered in the
+  browser (`tokenfarm.lang`). English is the default on first load.
+- **Bilingual documentation.** This README and the [changelog](CHANGELOG.md) now have
+  Chinese counterparts — [`README.zh-CN.md`](README.zh-CN.md) and
+  [`CHANGELOG.zh-CN.md`](CHANGELOG.zh-CN.md) — linked from the top of each file.
 
 ## New in v0.2.0
 
@@ -208,9 +221,14 @@ After onboarding, new players receive a guided tour of every v0.1.0 feature visi
 in the farm. Tutorial completion is stored in browser `localStorage` under
 `tokenfarm.tutorialVersion`.
 
-The bottom-right badge reads `v 0.2.0`. Its value comes from `package.json` through
+The bottom-right badge reads `v 0.2.1`. Its value comes from `package.json` through
 Vite's `__APP_VERSION__` build constant, so the package and interface share one
 version source. Click the badge to replay the complete tutorial.
+
+Next to the badge, a **中文 / EN** button toggles the interface between English and
+Simplified Chinese. The choice is stored in browser `localStorage` under
+`tokenfarm.lang` (English by default) and applies to the whole UI, including a live
+tutorial.
 
 ## Verification
 
@@ -256,6 +274,7 @@ TokenFarm/
 │   ├── index.html
 │   └── src/
 │       ├── api.ts            SSE subscription and action requests
+│       ├── i18n.ts           English/Chinese copy catalog and language toggle
 │       ├── main.ts           Application state, interactions, and version badge
 │       ├── render.ts         Onboarding and farm markup
 │       ├── tutorial.ts       Versioned guided walkthrough
