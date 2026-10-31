@@ -19,10 +19,12 @@ const adapters = [
   new ClaudeAdapter({
     offsets: engine.state.ingestOffsets,
     onEvent: (event) => engine.ingest(event),
+    onLimit: (event) => engine.reportLimit(event),
   }),
   new CodexAdapter({
     offsets: engine.state.ingestOffsets,
     onEvent: (event) => engine.ingest(event),
+    onLimit: (event) => engine.reportLimit(event),
   }),
 ];
 for (const adapter of adapters) adapter.start();
@@ -73,6 +75,18 @@ function handleAction(action: string, body: any) {
       return engine.onboard(body.difficulty, body.workingHours);
     case 'toggleBlocked':
       return engine.toggleBlocked();
+    case 'buyItem':
+      return engine.buyItem(String(body.itemId));
+    case 'applyItem':
+      return engine.applyItem(Number(body.plotId), String(body.itemId));
+    case 'upgradeField':
+      return engine.upgradeField(Number(body.plotId));
+    case 'buyTool':
+      return engine.buyTool(String(body.toolId));
+    case 'toggleTool':
+      return engine.toggleTool(String(body.toolId));
+    case 'buyPower':
+      return engine.buyPower();
     case 'setCoins':
       return engine.setCoins(Number(body.amount));
     case 'setXp':

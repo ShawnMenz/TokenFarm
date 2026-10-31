@@ -36,10 +36,17 @@ body {
   gap: 8px;
   flex-wrap: wrap;
 }
+.wallet { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .coins { font-size: 22px; }
 .coins b { color: var(--gold); }
-.weather { color: var(--ink); font-size: 14px; opacity: 0.95; }
+.power { font-size: 16px; color: var(--muted); }
+.power b { color: #9ad0ff; }
+/* The weather line takes the remaining space and wraps inside it, so a long
+   sentence (e.g. plan-limit protection) never pushes the button to a new row. */
+.weather { color: var(--ink); font-size: 14px; opacity: 0.95; flex: 1 1 0; min-width: 0; text-align: center; }
 .blocked-toggle {
+  flex-shrink: 0;
+  white-space: nowrap;
   background: #2b3340;
   color: var(--ink);
   border: 1px solid #3a4553;
@@ -67,6 +74,8 @@ body {
   overflow: hidden;
 }
 .xpfill { height: 100%; background: var(--accent); transition: width 0.4s ease; }
+/* Next level unlock line under the XP bar. */
+.unlocks { margin: -6px 0 12px; font-size: 12px; color: var(--muted); text-align: center; }
 
 /* ---- field ---- */
 .field {
@@ -108,6 +117,16 @@ body {
 .act:disabled { opacity: 0.4; cursor: not-allowed; }
 .act.harvest { background: var(--gold); color: #26210a; font-weight: 600; border: none; }
 .act.clear { background: #4a2b2b; }
+.act.upgrade { background: #24342b; border-color: rgba(111, 207, 127, 0.35); font-size: 11px; }
+.act.apply { width: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px; padding: 3px 7px; font-size: 14px; }
+.act.apply-medicine { width: 100%; justify-content: center; background: #2b3a4a; font-size: 12px; }
+
+/* Field tiers: a richer soil tint and a small label; boosts show as badges. */
+.plot.tier-2 { border-color: rgba(111, 207, 127, 0.35); background: rgba(40, 70, 40, 0.28); }
+.plot.tier-3 { border-color: rgba(154, 208, 255, 0.45); background: rgba(40, 70, 90, 0.3); }
+.plot-tags { display: flex; gap: 4px; align-items: center; justify-content: center; min-height: 16px; }
+.plot-tier { font-size: 10px; color: var(--muted); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 999px; padding: 0 6px; }
+.boost-badge { font-size: 12px; }
 
 /* "+" tile — plow a new field (same box metrics as .plot) */
 .plot-add {
@@ -172,9 +191,11 @@ body {
 .shop-tip {
   position: absolute;
   bottom: calc(100% - 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
+  /* Span the card and wrap, so long tips (tools) never overflow a narrow screen. */
+  left: 4px;
+  right: 4px;
+  white-space: normal;
+  text-align: center;
   background: #10151c;
   color: var(--ink);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -206,6 +227,12 @@ body {
   cursor: pointer;
 }
 .shop-buy:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Locked cards (above the player's level) are dimmed; the button shows the level. */
+.shop-card.locked { opacity: 0.55; }
+.shop-card.locked .shop-buy:disabled { opacity: 1; background: #2b3340; color: var(--muted); }
+/* Installed tools: an on/off switch in place of Buy. */
+.tool-toggle.on { background: #9ad0ff; color: #0b1a26; }
+.tool-toggle.off { background: #2b3340; color: var(--muted); }
 
 .foot { margin-top: 16px; font-size: 12px; color: var(--muted); text-align: center; }
 
@@ -497,3 +524,8 @@ body {
   cursor: pointer;
 }
 .dtb-inject:hover { filter: brightness(1.08); }
+
+/* Phones: the weather sentence gets its own full-width row under coins + button. */
+@media (max-width: 520px) {
+  .weather { flex-basis: 100%; order: 3; }
+}

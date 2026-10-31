@@ -1,7 +1,8 @@
 import os from 'node:os';
 import path from 'node:path';
 import { JsonlTailer } from './jsonlTailer.js';
-import type { Adapter, TokenEvent } from './types.js';
+import { detectClaudeLimit } from './limits.js';
+import type { Adapter, LimitEvent, TokenEvent } from './types.js';
 
 // Root dir of Claude Code session logs. Overridable via env so tests can point at
 // a synthetic directory.
@@ -41,6 +42,8 @@ interface ClaudeAdapterOpts {
   // persist it as part of game state (resume across restarts).
   offsets: Record<string, number>;
   onEvent: (e: TokenEvent) => void;
+  // Plan-limit signals parsed from the same records (optional).
+  onLimit?: (e: LimitEvent) => void;
 }
 
 export class ClaudeAdapter implements Adapter {
@@ -56,6 +59,8 @@ export class ClaudeAdapter implements Adapter {
         if (tokens > 0) {
           opts.onEvent({ agent: 'claude', tokens, at: Date.now() });
         }
+        const limit = opts.onLimit ? detectClaudeLimit(record) : null;
+        if (limit) opts.onLimit!(limit);
       },
     });
   }

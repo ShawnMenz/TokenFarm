@@ -91,6 +91,39 @@ export const TUTORIAL_STEPS: Step[] = [
     placement: 'top',
   },
   {
+    id: 'unlocks',
+    version: '0.3.0',
+    selector: '.unlocks',
+    fallbackSelector: '.level',
+    titleKey: 'tutUnlocksTitle',
+    bodyKey: 'tutUnlocksBody',
+    placement: 'bottom',
+  },
+  {
+    id: 'supplies',
+    version: '0.3.0',
+    selector: '.shop-supplies',
+    titleKey: 'tutSuppliesTitle',
+    bodyKey: 'tutSuppliesBody',
+    placement: 'top',
+  },
+  {
+    id: 'automation',
+    version: '0.3.0',
+    selector: '.shop-tools',
+    titleKey: 'tutToolsTitle',
+    bodyKey: 'tutToolsBody',
+    placement: 'top',
+  },
+  {
+    id: 'plan-limit',
+    version: '0.3.0',
+    selector: '.weather',
+    titleKey: 'tutLimitTitle',
+    bodyKey: 'tutLimitBody',
+    placement: 'bottom',
+  },
+  {
     id: 'foot',
     version: '0.1.0',
     selector: '.foot',
@@ -212,6 +245,13 @@ function showStep(i: number) {
   }
 
   applyStepText();
+  // The farm can be taller than the window (shop sections); bring an off-screen
+  // target into view. The scroll listener re-anchors the bubble as it moves.
+  const target = currentTarget();
+  const r = target?.getBoundingClientRect();
+  if (target && r && (r.top < 0 || r.bottom > window.innerHeight)) {
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
   reposition();
 }
 

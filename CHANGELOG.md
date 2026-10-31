@@ -6,6 +6,59 @@
 
 _Nothing yet._
 
+## [0.3.0] - 2026-10-31
+
+### Added
+
+- **Level unlocks.** XP now has a purpose: crops, supplies, field upgrades,
+  electricity, and tools each unlock at a level (set by `unlockLevel` in
+  `prices.json`). Locked shop cards show 🔒 and their level, and a line under the XP
+  bar shows what the next level brings.
+- **Apple Tree 🍎.** A premium crop (12,000 coins, 120 min, +60 XP) that unlocks at
+  Lv 8 and needs a Fertile Field or better.
+- **Field upgrades.** Any field can be upgraded to a **Fertile Field** (Lv 3, 2,000
+  coins, grows ×1.25) and then a **Greenhouse** (Lv 6, 8,000 coins, ×1.5). Upgrades
+  are permanent.
+- **Supplies.** A new shop section sells **💧 Water** (one crop grows ×1.5 faster),
+  **🧪 Fertilizer** (one crop gives ×1.5 harvest XP), and **💊 Medicine** (cures a
+  wilting crop). Water and fertilizer are used from a growing field, once each per
+  crop, with small badges showing what's applied; wilting crops get a **Cure** button.
+- **Tools & electricity.** Buy a **Sprinkler** (waters), **Harvester** (harvests),
+  and **Planter** (replants from your seed stock) once, and they tend the farm every
+  second, each action spending 1 ⚡. Electricity comes in 50 ⚡ packs for 500 coins and
+  shows next to your coins. Every tool has an On/Off switch. Tools never produce
+  coins, so tokens remain the only coin source.
+- **Plan-limit protection.** TokenFarm now reads usage limits from the same local
+  logs: Codex `rate_limits` snapshots (a full window or `rate_limit_reached_type`) and
+  Claude Code usage-limit error records. While an agent is limited, idle working
+  hours don't count toward wilting and the weather line says which agent is limited
+  and until when. Protection ends at the reset time or as soon as that agent produces
+  real usage again.
+- **Walkthrough for 0.3.0.** Four new tutorial steps — level unlocks, supplies,
+  tools & power, and plan-limit protection — in English and Chinese. Returning
+  players see only these.
+
+### Changed
+
+- **Corn and Pumpkin now unlock at Lv 3 and Lv 5.** Seeds you already own and crops
+  already planted are unaffected.
+- **Save format v2.** Older saves upgrade automatically on load, keeping coins, level,
+  fields, seeds, and ingest offsets.
+- The tutorial scrolls to steps whose target is below the fold, and shop tooltips wrap
+  inside their card instead of overflowing narrow screens. On phones, the weather line
+  gets its own row.
+- **Documentation reorganized.** The README now holds only the project introduction,
+  a quick start, and the game guide, linking here for release history. Configuration,
+  developer mode, tests, and project structure moved to a new
+  [`DEVELOPMENT.md`](DEVELOPMENT.md) ([`DEVELOPMENT.zh-CN.md`](DEVELOPMENT.zh-CN.md)).
+
+### Fixed
+
+- The README coin formula now shows the real divisor (÷200, `conversionDivisor` in
+  `prices.json`) instead of ÷100, in both languages.
+- The developer-mode crop-state menu is translated in Chinese mode.
+- A long weather line no longer pushes the **I'm blocked** button onto a second row.
+
 ## [0.2.1] - 2026-07-20
 
 ### Added
@@ -133,7 +186,8 @@ and Codex activity.
   weather, coin-math, JSONL-tail, restart-offset, truncation, and concurrent-provider
   checks, plus TypeScript validation and a production build command.
 
-[Unreleased]: https://github.com/ShawnMenz/TokenFarm/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/ShawnMenz/TokenFarm/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ShawnMenz/TokenFarm/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ShawnMenz/TokenFarm/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ShawnMenz/TokenFarm/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ShawnMenz/TokenFarm/releases/tag/v0.1.0

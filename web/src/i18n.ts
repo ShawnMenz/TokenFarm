@@ -128,6 +128,50 @@ const en = {
   tutFootTitle: '⚙️ Difficulty & hours',
   tutFootBody:
     'Your difficulty multiplier and working window. Crops grow during your working hours — you set these during onboarding.',
+  // v0.3.0 — plan-limit weather line (agents: "Claude", "Codex & Claude"; time is pre-formatted)
+  weatherSunnyLimited: (agents: string, time: string) =>
+    `Sunny · ${agents} limit reached — crops protected until ${time}`,
+
+  // v0.3.0 — level unlocks
+  unlocksNext: (level: number, list: string) => `Next unlock · Lv ${level} → ${list}`,
+  unlocksAll: 'Everything unlocked 🎉',
+  lockedAt: (level: number) => `🔒 Lv ${level}`,
+  needsTier: (tier: string) => `Needs ${tier}`,
+
+  // v0.3.0 — supplies, field upgrades, tools, electricity
+  suppliesTitle: '🧺 Supplies',
+  toolsTitle: '🔧 Tools & power',
+  tipWater: (mult: number) => `This crop grows ×${mult} faster`,
+  tipFertilizer: (mult: number) => `This crop's harvest XP ×${mult}`,
+  tipMedicine: 'Cures a wilting crop',
+  tipPower: 'Electricity for your tools',
+  tipSprinkler: (power: number) => `Waters growing crops · ${power} ⚡ each`,
+  tipHarvester: (power: number) => `Harvests ripe crops · ${power} ⚡ each`,
+  tipPlanter: (power: number) => `Replants empty fields from your seeds · ${power} ⚡ each`,
+  buyPower: (n: number) => `+${n} ⚡`,
+  toolOn: 'On',
+  toolOff: 'Off',
+  ariaToggleTool: (name: string) => `Switch ${name} on or off`,
+  powerTitle: 'Electricity',
+  applyTitle: (name: string, n: number) => `Use ${name} (${n} left)`,
+  cure: '💊 Cure',
+  upgradeField: (tier: string, cost: number) => `⬆️ ${tier} (${cost})`,
+  badgeWatered: 'Watered — growing faster',
+  badgeFertilized: 'Fertilized — bonus XP at harvest',
+
+  // v0.3.0 tutorial steps
+  tutUnlocksTitle: '🔓 Level unlocks',
+  tutUnlocksBody:
+    'New in 0.3.0: XP now opens up the farm. Each level can unlock <b>new crops, supplies, field upgrades, and tools</b> — this line shows what your next level brings.',
+  tutSuppliesTitle: '🧺 Supplies',
+  tutSuppliesBody:
+    '<b>💧 Water</b> speeds up one crop, <b>🧪 Fertilizer</b> boosts its harvest XP, and <b>💊 Medicine</b> cures a wilting crop. Buy them here, then use them from a field.',
+  tutToolsTitle: '🔧 Tools & power',
+  tutToolsBody:
+    'Tools tend the farm for you: the <b>Sprinkler</b> waters, the <b>Harvester</b> harvests, the <b>Planter</b> replants. Each action uses ⚡ electricity bought with coins — switch any tool off to save power.',
+  tutLimitTitle: '🛡️ Plan-limit protection',
+  tutLimitBody:
+    'If Claude Code or Codex hits a <b>usage limit</b>, TokenFarm notices from the logs and pauses wilting until it resets — no need to press I\'m blocked.',
 };
 
 type Catalog = typeof en;
@@ -232,6 +276,46 @@ const zh: Catalog = {
   tutFootTitle: '⚙️ 难度与工作时间',
   tutFootBody:
     '你的难度倍率和工作时段。作物在你的工作时间内生长 — 这些在初始设置时配置。',
+  weatherSunnyLimited: (agents: string, time: string) =>
+    `晴天 · ${agents} 额度用完了 — 作物受保护至 ${time}`,
+
+  unlocksNext: (level: number, list: string) => `下一级解锁 · Lv ${level} → ${list}`,
+  unlocksAll: '全部解锁啦 🎉',
+  lockedAt: (level: number) => `🔒 Lv ${level}`,
+  needsTier: (tier: string) => `需要${tier}`,
+
+  suppliesTitle: '🧺 农资',
+  toolsTitle: '🔧 工具与电力',
+  tipWater: (mult: number) => `这株作物生长加速 ×${mult}`,
+  tipFertilizer: (mult: number) => `这株作物收获经验 ×${mult}`,
+  tipMedicine: '治好正在枯萎的作物',
+  tipPower: '给工具用的电',
+  tipSprinkler: (power: number) => `自动给生长中的作物浇水 · 每次 ${power} ⚡`,
+  tipHarvester: (power: number) => `自动收获成熟作物 · 每次 ${power} ⚡`,
+  tipPlanter: (power: number) => `用你的种子自动补种空田 · 每次 ${power} ⚡`,
+  buyPower: (n: number) => `+${n} ⚡`,
+  toolOn: '开',
+  toolOff: '关',
+  ariaToggleTool: (name: string) => `开关${name}`,
+  powerTitle: '电力',
+  applyTitle: (name: string, n: number) => `使用${name}（剩 ${n}）`,
+  cure: '💊 治疗',
+  upgradeField: (tier: string, cost: number) => `⬆️ ${tier}（${cost}）`,
+  badgeWatered: '已浇水 — 长得更快',
+  badgeFertilized: '已施肥 — 收获时多给经验',
+
+  tutUnlocksTitle: '🔓 升级解锁',
+  tutUnlocksBody:
+    '0.3.0 新增：经验终于有用了。升级会解锁<b>新作物、农资、田地升级和工具</b> — 这一行告诉你下一级能拿到什么。',
+  tutSuppliesTitle: '🧺 农资',
+  tutSuppliesBody:
+    '<b>💧 水</b>让一株作物长得更快，<b>🧪 肥料</b>让它收获时多给经验，<b>💊 药</b>能救活正在枯萎的作物。在这里买，然后在田里使用。',
+  tutToolsTitle: '🔧 工具与电力',
+  tutToolsBody:
+    '工具帮你打理农场：<b>洒水器</b>浇水，<b>收割机</b>收获，<b>播种机</b>补种。每次动作消耗用金币买的 ⚡ 电 — 不想耗电就把工具关掉。',
+  tutLimitTitle: '🛡️ 额度保护',
+  tutLimitBody:
+    'Claude Code 或 Codex 的<b>用量额度</b>用完时，TokenFarm 会从日志里发现，并在额度重置前暂停枯萎 — 不用再手动点“别卷了”。',
 };
 
 const catalogs: Record<Lang, Catalog> = { en, zh };
@@ -278,16 +362,49 @@ export function t<K extends keyof Catalog>(
   return typeof entry === 'function' ? (entry as (...a: unknown[]) => string)(...args) : (entry as string);
 }
 
-// Crop names are server-sourced (English) in the snapshot; translate by id here so
-// the server/web boundary stays intact. Falls back to the server name otherwise.
-const CROP_NAMES_ZH: Record<string, string> = {
+// Crop, supply, tool, and field-tier names are server-sourced (English) in the
+// snapshot; translate by id here so the server/web boundary stays intact. Falls
+// back to the server name otherwise. Field tiers use the id `tier<N>`.
+const ITEM_NAMES_ZH: Record<string, string> = {
   carrot: '胡萝卜',
   wheat: '小麦',
   corn: '玉米',
   pumpkin: '南瓜',
+  apple: '苹果树',
+  water: '水',
+  fertilizer: '肥料',
+  medicine: '药',
+  sprinkler: '洒水器',
+  harvester: '收割机',
+  planter: '播种机',
+  power: '电力',
+  tier1: '普通田',
+  tier2: '肥沃田',
+  tier3: '温室',
 };
-export function cropName(id: string, fallback: string): string {
-  return current === 'zh' ? CROP_NAMES_ZH[id] ?? fallback : fallback;
+export function itemName(id: string, fallback: string): string {
+  return current === 'zh' ? ITEM_NAMES_ZH[id] ?? fallback : fallback;
+}
+export const cropName = itemName;
+
+// Plot-state names for the dev force-state dropdown.
+const PLOT_STATE_NAME: Record<Lang, Record<string, string>> = {
+  en: { growing: 'Growing', mature: 'Mature', wilted: 'Wilted', dead: 'Dead', empty: 'Empty' },
+  zh: { growing: '生长中', mature: '成熟', wilted: '枯萎', dead: '死亡', empty: '空地' },
+};
+export function plotStateName(state: string): string {
+  return PLOT_STATE_NAME[current][state] ?? state;
+}
+
+// When a plan limit lifts: a clock time today, or weekday + time if it's further out.
+export function formatUntil(until: number, now: number): string {
+  const locale = current === 'zh' ? 'zh-CN' : 'en-US';
+  const sameDay = new Date(until).toDateString() === new Date(now).toDateString();
+  return new Date(until).toLocaleString(locale, {
+    ...(sameDay ? {} : { weekday: 'short' }),
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 // Short difficulty name (Easy/Normal/Hard) used in the footer and blurb.

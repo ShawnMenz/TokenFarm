@@ -1,7 +1,8 @@
 import os from 'node:os';
 import path from 'node:path';
 import { JsonlTailer } from './jsonlTailer.js';
-import type { Adapter, TokenEvent } from './types.js';
+import { detectCodexLimit } from './limits.js';
+import type { Adapter, LimitEvent, TokenEvent } from './types.js';
 
 function count(v: unknown): number {
   return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0;
@@ -55,6 +56,8 @@ interface CodexAdapterOpts {
   root?: string;
   offsets: Record<string, number>;
   onEvent: (event: TokenEvent) => void;
+  // Plan-limit signals parsed from the same records (optional).
+  onLimit?: (event: LimitEvent) => void;
 }
 
 export class CodexAdapter implements Adapter {
@@ -70,6 +73,8 @@ export class CodexAdapter implements Adapter {
         if (tokens > 0) {
           opts.onEvent({ agent: 'codex', tokens, at: Date.now() });
         }
+        const limit = opts.onLimit ? detectCodexLimit(record) : null;
+        if (limit) opts.onLimit!(limit);
       },
     });
   }

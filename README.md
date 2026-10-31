@@ -13,52 +13,46 @@ The game runs quietly beside a terminal. Recent agent activity acts like sunligh
 crops grow while you work, begin to wilt after generous stretches of working-hours
 inactivity, and remain protected during rest time.
 
-> Status: **v0.2.1 — full Simplified-Chinese interface with an in-app English/中文
-> toggle, on top of the v0.2.0 seed shop, new crops, gradual leveling, and expanded
-> developer mode.** See [the changelog](CHANGELOG.md).
+- 📜 **What's new:** see the [changelog](CHANGELOG.md).
+- 🛠️ **Configuration, developer mode, and project structure:** see the
+  [development guide](DEVELOPMENT.md).
 
-## New in v0.2.1
+## Quick start
 
-- **Simplified-Chinese interface.** The entire UI — HUD, weather, plots, seed shop,
-  onboarding, tutorial, and developer controls — is fully localized into 简体中文.
-- **In-app language toggle.** A bottom-right **中文 / EN** button switches the whole
-  interface between English and Chinese instantly; your choice is remembered in the
-  browser (`tokenfarm.lang`). English is the default on first load.
-- **Bilingual documentation.** This README and the [changelog](CHANGELOG.md) now have
-  Chinese counterparts — [`README.zh-CN.md`](README.zh-CN.md) and
-  [`CHANGELOG.zh-CN.md`](CHANGELOG.zh-CN.md) — linked from the top of each file.
+You need **Node.js 20 or newer** and at least one local coding agent: **Claude Code**
+or the **Codex** CLI/Desktop app. No API key or account connection is required —
+TokenFarm only reads the session logs those agents already write on your machine.
 
-## New in v0.2.0
+```bash
+git clone https://github.com/ShawnMenz/TokenFarm.git
+cd TokenFarm
+npm install
+npm run build
+npm start
+```
 
-- **Seed shop & inventory** with three new crops — Carrot 🥕, Corn 🌽, and
-  Pumpkin 🎃 alongside Wheat 🌾. Buy seeds, then plant an owned seed from stock.
-- **Gradual leveling curve** (early levels are quick, later ones cost more, no level
-  cap) and a single canonical [`prices.json`](server/src/game/prices.json) economy
-  record.
-- **Smarter onboarding** — a grouping day picker (Weekdays / Weekend / Everyday) and
-  friendlier difficulty descriptions.
-- **Expanded developer mode** (`npm run dev`) — adjust coins, XP, level, crop growth,
-  plot state, and weather; a fake-token-flow injector for tuning the economy; and an
-  isolated `~/.tokenfarm-dev` sandbox that never touches the real save.
+Open **http://localhost:8787**, choose a difficulty and your working hours, then go
+back to coding. Coins arrive as soon as your agent uses tokens. In VS Code, the
+**Simple Browser: Show** command keeps the farm in a pane beside your terminal.
 
-See the [v0.2.0 changelog](CHANGELOG.md#020---2026-07-20) for the full list.
+Your farm is saved to `~/.tokenfarm/state.json` and picks up where you left off the
+next time you run `npm start`.
 
-## What is included in v0.1.0
+## Game guide
 
-- Concurrent local ingestion from Claude Code and Codex CLI/Desktop.
-- Difficulty-scaled token-to-coin conversion with whole-coin presentation.
-- Working-hours weather, activity-driven growth, wilting, recovery, and death.
-- Planting and harvesting wheat, XP and levels, crop removal, and unlimited field
-  expansion through the **+** tile.
-- First-launch setup, a guided tutorial, and a replayable bottom-right version badge.
-- Local save-state and ingestion-offset persistence.
-- Development and production servers, automated checks, TypeScript validation, and
-  production builds.
+### The loop
 
-The complete feature inventory is filed as new work in the
-[v0.1.0 changelog](CHANGELOG.md#010---2026-07-17).
+1. Choose a difficulty and working schedule during first-launch setup.
+2. Work with Claude Code or Codex to earn coins in real time.
+3. Buy seeds in the [shop](#crops-and-levels) and plant them on a field — or plow
+   another field with the **+** tile (300 coins each, no limit).
+4. Keep your agent active during sunny working hours so crops grow.
+5. Harvest mature crops for XP. Remove wilted or dead crops to reuse their fields.
+6. Level up to unlock new crops, [supplies](#supplies),
+   [field upgrades](#field-upgrades), and [tools](#tools-and-electricity) that run the
+   farm for you.
 
-## How token usage becomes coins
+### Coins come from tokens
 
 ```text
 Claude Code  ~/.claude/projects/**/*.jsonl ─┐
@@ -66,11 +60,8 @@ Claude Code  ~/.claude/projects/**/*.jsonl ─┐
 Codex       ~/.codex/sessions/**/*.jsonl ────┘    tail → coins + simulation
 ```
 
-TokenFarm watches only records appended while it is running. Existing session
-history is skipped the first time a file is seen, and persisted byte offsets prevent
-already-consumed records from being rewarded after a restart.
-
-Countable usage is normalized per provider:
+Tokens are the only coin faucet — harvesting gives XP, never coins. Countable usage is
+normalized per agent:
 
 ```text
 Claude Code currency = input_tokens
@@ -83,230 +74,111 @@ Codex currency       = input_tokens
 ```
 
 Claude `cache_read_input_tokens` are excluded. Codex reads only the per-turn
-`last_token_usage`; cumulative totals and separate reasoning totals are not added,
-and cached-input metadata is not deducted.
-
-Countable tokens are converted using the selected difficulty:
+`last_token_usage`; cumulative totals and separate reasoning totals are not added.
+Countable tokens become coins at your difficulty's rate:
 
 ```text
-coins earned = countable tokens × difficulty multiplier ÷ 100
+coins earned = countable tokens × difficulty multiplier ÷ 200
 ```
 
-Easy uses ×1.5, Normal ×1.0, and Difficult ×0.5. Fractional accrual is retained in
-the save state, while the interface displays and spends the whole-coin portion.
+Easy uses ×1.5, Normal ×1.0, and Difficult ×0.5. Fractions are kept in your save; the
+interface shows and spends whole coins.
 
-## Gameplay loop
+Only usage written while TokenFarm is running counts. Session history that already
+exists the first time TokenFarm sees a log is skipped, and saved read positions stop
+anything from being rewarded twice after a restart. Personal Codex Cloud tasks don't
+count, because they don't expose per-turn token usage; local Codex CLI/Desktop
+sessions do.
 
-1. Choose a difficulty and working schedule during first-launch onboarding.
-2. Work locally with Claude Code or Codex to earn coins in real time.
-3. Spend coins in the [seed shop](#shop-and-crops), then plant an owned seed on a
-   field — or plow another field with the **+** tile.
-4. Keep the agent active during sunny working hours to grow crops. A wilted crop can
-   recover when activity resumes.
-5. Harvest mature crops for XP, or remove wilted and dead crops to reuse their fields.
+### Weather and wilting
 
-Weather has two states:
+- **☀️ Sunny:** your working hours. While your agent is active (any token use in the
+  last 2 minutes), crops grow. While it's idle, a wilt clock runs.
+- **🌧️ Rainy:** off-hours, weekends, or **I'm blocked** mode. Crops are protected —
+  they neither grow nor decay.
 
-- **☀️ Sunny:** configured working time. Active agent usage grows crops; inactivity
-  advances the wilt clock.
-- **🌧️ Rainy:** off-hours, weekends, or manual blocked mode. Crops are protected and
-  neither grow nor decay.
+The wilt clock is generous: a crop wilts after about 2.5 working days of idle sunny
+time and dies after 5. A wilting crop recovers as soon as your agent is active again,
+or you can cure it with medicine. Dead crops can only be removed. Waiting on something
+outside your control? Flip **I'm blocked** to force rainy weather.
 
-Tokens are the only coin faucet; harvesting awards XP rather than coins.
+### Plan-limit protection
 
-## Shop and crops
+If Claude Code or Codex hits a usage limit, you can't keep working with it, so letting
+crops wilt would be unfair. TokenFarm reads the limit from the same local logs:
 
-The **🛒 Seed Shop** sells seeds into a per-crop inventory. Buy a seed with coins,
-then plant an owned seed on an empty (plowed) field — planting draws from your stock
-instead of charging coins again. Each shop card shows the seed's price, XP reward,
-grow time, and how many you own.
+- **Codex** records a usage snapshot on every turn. A full window (100%) means limited
+  until that window resets.
+- **Claude Code** writes an error record when a usage limit is reached. Its reset time
+  is read from the message when present; otherwise protection lasts 5 hours.
 
-| Crop | Coins | Grow time | Harvest XP |
+While a limit is active, idle working-hours time doesn't count toward wilting, and the
+weather line says which agent is limited and until when. Crops still grow if you keep
+working with the other agent. Protection ends at the reset time, or as soon as that
+agent produces real usage again.
+
+### Crops and levels
+
+| Crop | Coins | Grow time | Harvest XP | Unlocks at |
+| --- | --- | --- | --- | --- |
+| Carrot 🥕 | 500 | 15 min | +5 | Lv 1 |
+| Wheat 🌾 | 1,500 | 30 min | +10 | Lv 1 |
+| Corn 🌽 | 2,500 | 30 min | +12 | Lv 3 |
+| Pumpkin 🎃 | 6,000 | 60 min | +25 | Lv 5 |
+| Apple Tree 🍎 | 12,000 | 120 min | +60 | Lv 8 · needs a Fertile Field or better |
+
+Grow time is active, sunny working time. Buying a seed puts it in your stock; planting
+uses one from stock, so you never pay twice.
+
+XP fills the bar under your coins. Early levels take 100 XP each, and later levels
+cost progressively more, with no level cap. Your level decides what the shop sells:
+locked cards show 🔒 and the level they open at, and the line under the XP bar shows
+your next unlock. Seeds you already own stay plantable even above your level.
+
+### Supplies
+
+Supplies are one-use items. Buy them into your stock, then use them from a field.
+
+| Supply | Coins | Unlocks at | Effect |
 | --- | --- | --- | --- |
-| Carrot 🥕 | 500 | 15 min | +5 |
-| Wheat 🌾 | 1,500 | 30 min | +10 |
-| Corn 🌽 | 2,500 | 30 min | +12 |
-| Pumpkin 🎃 | 6,000 | 60 min | +25 |
+| 💧 Water | 150 | Lv 2 | The crop it's used on grows ×1.5 faster. |
+| 💊 Medicine | 400 | Lv 2 | Cures a wilting crop (a dead crop can't be saved). |
+| 🧪 Fertilizer | 300 | Lv 3 | The crop it's used on gives ×1.5 XP at harvest (rounded). |
 
-XP is earned on harvest and drives leveling; it is not a spendable currency. All of
-these values are defined in [`server/src/game/prices.json`](server/src/game/prices.json)
-(see [Configuration](#configuration)).
+Water and fertilizer can each be used once per crop; small 💧/🧪 badges show which a
+field already has. A **💊 Cure** button appears on wilting crops when you have
+medicine.
 
-## Requirements
+### Field upgrades
 
-- Node.js 20 or newer and npm.
-- At least one supported local coding agent: Claude Code or local Codex CLI/Desktop
-  session files.
+An empty field shows an **⬆️** button once its next tier is unlocked. Upgrades are
+permanent and stack with water.
 
-No API key or account integration is required. TokenFarm reads local JSONL session
-files only.
+| Field tier | Upgrade cost | Unlocks at | Growth |
+| --- | --- | --- | --- |
+| Field | — | Lv 1 | ×1.0 |
+| Fertile Field | 2,000 | Lv 3 | ×1.25 |
+| Greenhouse | 8,000 | Lv 6 | ×1.5 |
 
-## Install and run
+### Tools and electricity
 
-```bash
-npm install
-npm run dev
-```
+Tools are bought once and then act on their own every second, spending ⚡ electricity
+for each action. Electricity comes in packs of 50 ⚡ for 500 coins (unlocks at Lv 4)
+and shows next to your coins. Each tool has an **On/Off** switch on its shop card.
 
-Development mode starts both processes:
+| Tool | Coins | Unlocks at | What it does (1 ⚡ per action) |
+| --- | --- | --- | --- |
+| 🚿 Sprinkler | 5,000 | Lv 4 | Waters growing crops. |
+| 🤖 Harvester | 8,000 | Lv 5 | Harvests mature crops (you still get the XP). |
+| 🚜 Planter | 8,000 | Lv 6 | Replants empty fields from your seed stock — the crop last grown there if you have it, otherwise the most valuable seed the field can hold. |
 
-| Process | URL | Purpose |
-| --- | --- | --- |
-| Game server | http://localhost:8787 | Tails agent logs, runs the simulation, and provides SSE plus actions |
-| Vite UI | http://localhost:5173 | Browser interface with development proxying |
+Tools never produce coins, so your agent's tokens remain the only coin source.
 
-Open http://localhost:5173. In VS Code, the built-in **Simple Browser: Show** command
-can keep the farm in an editor pane beside the terminal.
+### Tutorial and language
 
-To observe the full grow, wilt, and death cycle quickly:
+After setup, a short guided tour points out each part of the farm. When an update adds
+features, returning players see only the new steps. Click the version badge in the
+bottom-right corner to replay the full tour.
 
-```bash
-TOKENFARM_FAST=1 npm run dev
-```
-
-## Configuration
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `TOKENFARM_FAST` | unset | Set to `1` to shorten activity, growth, wilt, and death timers. |
-| `TOKENFARM_DEV` | unset | Set to `1` to enable [developer mode](#developer-mode). `npm run dev` sets this automatically; `npm start` does not. |
-| `TOKENFARM_PORT` | `8787` | Override the game server port, e.g. to run a second, isolated instance alongside a primary one. |
-| `TOKENFARM_STATE_DIR` | `~/.tokenfarm` (user) · `~/.tokenfarm-dev` (dev) | Directory containing the persistent `state.json` save file. When unset, developer mode (`TOKENFARM_DEV=1`) uses a separate `~/.tokenfarm-dev` sandbox; setting this variable overrides both. |
-| `TOKENFARM_CLAUDE_DIR` | `~/.claude/projects` | Root directory containing Claude Code session logs. |
-| `TOKENFARM_CODEX_DIR` | `$CODEX_HOME/sessions`, otherwise `~/.codex/sessions` | Explicit Codex rollout root; this override takes precedence over both defaults. |
-
-If `TOKENFARM_CODEX_DIR` is unset and `CODEX_HOME` is defined, TokenFarm watches
-`$CODEX_HOME/sessions`.
-
-Priced values — seed costs, plow cost, the coin conversion divisor, difficulty
-multipliers, the XP-per-level curve, and each crop's grow time and XP reward — are
-the canonical record in
-[`server/src/game/prices.json`](server/src/game/prices.json); edit that one file to
-tune the economy. Remaining timing constants (activity window, wilt/death clocks)
-live in [`server/src/game/config.ts`](server/src/game/config.ts).
-
-## Developer mode
-
-`npm run dev` runs in **developer mode** (it sets `TOKENFARM_DEV=1`); `npm start`
-runs in normal user mode. Developer mode adds controls for testing the game without
-waiting on real agent token activity:
-
-- **Adjustable state.** Edit coins, XP, and level directly; override the weather
-  (Auto / ☀️ Sunny / 🌧️ Rainy); and per planted plot, drag a growth-% slider (100%
-  = ready) or force its state (growing / mature / wilted / dead / empty). Editable
-  fields keep focus and your input across the live refresh.
-- **Fake token flow.** A left-side box lets you enter `input_tokens`,
-  `cache_creation_input_tokens`, and `output_tokens`; it previews the coins that
-  burst yields at the current conversion divisor and difficulty, and the **Inject**
-  button runs it through the real ingestion path — handy for tuning
-  `conversionDivisor`.
-- **Restart.** A bottom-center **Restart** button wipes all progress and returns
-  to first-launch onboarding. It preserves log ingest offsets, so a restart does
-  not re-read your whole token history back into coins.
-
-All controls are hidden in user mode, and the server rejects their actions
-(`dev-only`) unless `TOKENFARM_DEV=1`, so a `npm start` build cannot invoke them.
-
-**Separate save profile.** Developer mode uses its own isolated save directory —
-`~/.tokenfarm-dev` — instead of the real `~/.tokenfarm`. Running `npm run dev` (and
-its Restart / edits) therefore never touches your real game or its token-ingest
-progress: it keeps its own offsets, so the next `npm start` still collects every
-token since your last user session, including any that arrived during a dev session.
-`npm start` never creates or reads the dev profile. (`TOKENFARM_STATE_DIR` overrides
-both.)
-
-## Tutorial and version badge
-
-After onboarding, new players receive a guided tour of every v0.1.0 feature visible
-in the farm. Tutorial completion is stored in browser `localStorage` under
-`tokenfarm.tutorialVersion`.
-
-The bottom-right badge reads `v 0.2.1`. Its value comes from `package.json` through
-Vite's `__APP_VERSION__` build constant, so the package and interface share one
-version source. Click the badge to replay the complete tutorial.
-
-Next to the badge, a **中文 / EN** button toggles the interface between English and
-Simplified Chinese. The choice is stored in browser `localStorage` under
-`tokenfarm.lang` (English by default) and applies to the whole UI, including a live
-tutorial.
-
-## Verification
-
-```bash
-npm test          # accounting, path, weather, economy, and live-tail checks
-npm run typecheck # TypeScript validation
-npm run build     # production browser bundle in web-dist/
-```
-
-The live-tail checks cover both providers, startup-history protection, incomplete
-lines, malformed records, new sessions, truncation recovery, persisted offsets, and
-concurrent aggregation.
-
-## Production
-
-```bash
-npm run build
-npm start
-```
-
-The server serves the generated `web-dist/` application at http://localhost:8787.
-
-## Project structure
-
-```text
-TokenFarm/
-├── server/src/
-│   ├── index.ts              HTTP, SSE, actions, static files, and adapter startup
-│   ├── sse.ts                SSE client registry and broadcasting
-│   ├── game/
-│   │   ├── prices.json       Canonical price record (seeds, plow, XP curve, crops)
-│   │   ├── config.ts         Loads prices.json; economy, crops, and timers
-│   │   ├── engine.ts         Coin ingestion, simulation, and player actions
-│   │   ├── state.ts          Save-state schema and atomic JSON persistence
-│   │   └── weather.ts        Working schedule and blocked-mode weather
-│   ├── ingest/
-│   │   ├── types.ts          Normalized token events and adapter interface
-│   │   ├── jsonlTailer.ts    Recursive JSONL watching and byte offsets
-│   │   ├── claudeAdapter.ts  Claude Code usage normalization
-│   │   └── codexAdapter.ts   Codex rollout usage normalization
-│   └── test/run.ts           Assertion and live-tail integration harness
-├── web/
-│   ├── index.html
-│   └── src/
-│       ├── api.ts            SSE subscription and action requests
-│       ├── i18n.ts           English/Chinese copy catalog and language toggle
-│       ├── main.ts           Application state, interactions, and version badge
-│       ├── render.ts         Onboarding and farm markup
-│       ├── tutorial.ts       Versioned guided walkthrough
-│       └── style.css         Farm, modal, badge, and tutorial styling
-├── CHANGELOG.md              Keep a Changelog-style release history
-├── package.json              Scripts, dependencies, and release version
-└── vite.config.ts            Development proxy and production build
-```
-
-## Versioning
-
-TokenFarm follows [Semantic Versioning](https://semver.org/) and maintains a
-[Keep a Changelog](https://keepachangelog.com/)-style history. The repository's
-complete current development state is the initial `0.1.0` release.
-
-While the project remains below 1.0.0:
-
-- Minor releases (`0.x.0`) add player-facing features and include walkthrough steps
-  for those features.
-- Patch releases (`0.x.y`) contain fixes or tuning without new tutorial steps.
-- Version `1.0.0` is reserved for a feature-complete stable release.
-
-## Current limitation
-
-Personal Codex Cloud tasks do not count because their personal task interface does
-not expose the exact per-turn token usage required by TokenFarm's economy. Local
-Codex CLI/Desktop rollouts are supported.
-
-## Roadmap
-
-Deferred ideas include crop and field tiers, fertilizer, electricity, utensils and
-automation, medicine for wilted crops, a full level-unlock tree, automatic plan-limit
-detection, more coding-agent adapters, exact personal cloud usage if an API becomes
-available, OpenTelemetry as a multi-agent ingestion layer, richer artwork, and a
-dedicated VS Code panel extension.
+The **中文 / EN** button next to the badge switches the whole interface between English
+and Simplified Chinese instantly; your choice is remembered in the browser.

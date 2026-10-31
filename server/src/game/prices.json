@@ -1,5 +1,5 @@
 {
-  "_about": "Canonical TokenFarm price record. Edit values here; they are loaded at startup by server/src/game/config.ts. coinCost is spent to buy a seed in the shop; xpReward is earned on harvest (XP is NOT a spendable currency). Crops are listed in ascending cost so the shop renders them in that order. xpLevelBands is the gradually-ascending XP-per-level curve: each band gives the XP needed for every level up through its throughLevel; levels above the last band hold at the last band's rate (no level cap). Add bands to raise it further.",
+  "_about": "Canonical TokenFarm price record. Edit values here; they are loaded at startup by server/src/game/config.ts. coinCost is spent to buy something in the shop; xpReward is earned on harvest (XP is NOT a spendable currency — it raises your level, and unlockLevel gates what the shop sells). Crops are listed in ascending cost so the shop renders them in that order; minFieldTier is the lowest field tier a crop can be planted on. xpLevelBands is the gradually-ascending XP-per-level curve: each band gives the XP needed for every level up through its throughLevel; levels above the last band hold at the last band's rate (no level cap). supplies are one-use consumables applied to a single field; fieldTiers are permanent per-field upgrades (tier 1 is the starting field); tools are bought once and run automatically, spending electricity per action.",
   "plowCost": 300,
   "conversionDivisor": 200,
   "difficultyMultipliers": { "easy": 1.5, "normal": 1.0, "difficult": 0.5 },
@@ -10,9 +10,26 @@
     { "throughLevel": 100, "xpPerLevel": 2000 }
   ],
   "crops": {
-    "carrot":  { "name": "Carrot",  "emoji": "🥕", "coinCost": 500,  "growMinutes": 15, "xpReward": 5 },
-    "wheat":   { "name": "Wheat",   "emoji": "🌾", "coinCost": 1500, "growMinutes": 30, "xpReward": 10 },
-    "corn":    { "name": "Corn",    "emoji": "🌽", "coinCost": 2500, "growMinutes": 30, "xpReward": 12 },
-    "pumpkin": { "name": "Pumpkin", "emoji": "🎃", "coinCost": 6000, "growMinutes": 60, "xpReward": 25 }
+    "carrot":  { "name": "Carrot",     "emoji": "🥕", "coinCost": 500,   "growMinutes": 15,  "xpReward": 5,  "unlockLevel": 1, "minFieldTier": 1 },
+    "wheat":   { "name": "Wheat",      "emoji": "🌾", "coinCost": 1500,  "growMinutes": 30,  "xpReward": 10, "unlockLevel": 1, "minFieldTier": 1 },
+    "corn":    { "name": "Corn",       "emoji": "🌽", "coinCost": 2500,  "growMinutes": 30,  "xpReward": 12, "unlockLevel": 3, "minFieldTier": 1 },
+    "pumpkin": { "name": "Pumpkin",    "emoji": "🎃", "coinCost": 6000,  "growMinutes": 60,  "xpReward": 25, "unlockLevel": 5, "minFieldTier": 1 },
+    "apple":   { "name": "Apple Tree", "emoji": "🍎", "coinCost": 12000, "growMinutes": 120, "xpReward": 60, "unlockLevel": 8, "minFieldTier": 2 }
+  },
+  "supplies": {
+    "water":      { "name": "Water",      "emoji": "💧", "coinCost": 150, "unlockLevel": 2, "growthMultiplier": 1.5 },
+    "medicine":   { "name": "Medicine",   "emoji": "💊", "coinCost": 400, "unlockLevel": 2 },
+    "fertilizer": { "name": "Fertilizer", "emoji": "🧪", "coinCost": 300, "unlockLevel": 3, "xpMultiplier": 1.5 }
+  },
+  "fieldTiers": [
+    { "tier": 1, "name": "Field",         "upgradeCost": 0,    "unlockLevel": 1, "growthMultiplier": 1.0 },
+    { "tier": 2, "name": "Fertile Field", "upgradeCost": 2000, "unlockLevel": 3, "growthMultiplier": 1.25 },
+    { "tier": 3, "name": "Greenhouse",    "upgradeCost": 8000, "unlockLevel": 6, "growthMultiplier": 1.5 }
+  ],
+  "electricity": { "coinCost": 500, "packSize": 50, "unlockLevel": 4 },
+  "tools": {
+    "sprinkler": { "name": "Sprinkler", "emoji": "🚿", "coinCost": 5000, "unlockLevel": 4, "powerPerUse": 1 },
+    "harvester": { "name": "Harvester", "emoji": "🤖", "coinCost": 8000, "unlockLevel": 5, "powerPerUse": 1 },
+    "planter":   { "name": "Planter",   "emoji": "🚜", "coinCost": 8000, "unlockLevel": 6, "powerPerUse": 1 }
   }
 }

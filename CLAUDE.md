@@ -25,5 +25,7 @@
 
 - Never commit local Claude or Codex logs, `.env` files, TokenFarm state,
   Playwright artifacts, generated `web-dist/` output, or dependencies.
-- Keep public setup and behavior documentation in `README.md` and release history
-  in `CHANGELOG.md`.
+- Keep the project introduction, quick start, and game guide in `README.md`;
+  configuration, developer mode, tests, and project structure in `DEVELOPMENT.md`;
+  and release history in `CHANGELOG.md`. The README links to the other two and never
+  carries release notes. Each has a `*.zh-CN.md` counterpart kept in step.

@@ -135,7 +135,7 @@ function dtbNum(el: HTMLInputElement): number {
 function updateTokenPreview(): void {
   const snap = latest as any;
   const sum = dtbNum(dtbIn) + dtbNum(dtbCc) + dtbNum(dtbOut);
-  const divisor = snap?.conversionDivisor ?? 100;
+  const divisor = snap?.conversionDivisor ?? 200; // prices.json conversionDivisor
   const mult = snap?.difficultyMultipliers?.[snap?.difficulty] ?? 1;
   const coins = (sum * mult) / divisor;
   dtbPreview.textContent = t('devTokenPreview', sum.toLocaleString(), coins.toFixed(2), divisor, mult);
@@ -293,5 +293,17 @@ app.addEventListener('click', async (ev) => {
     }
   } else if (name === 'toggleBlocked') {
     await action('toggleBlocked');
+  } else if (name === 'buyItem') {
+    await action('buyItem', { itemId: btn.dataset.item });
+  } else if (name === 'applyItem') {
+    await action('applyItem', { plotId: Number(btn.dataset.plot), itemId: btn.dataset.item });
+  } else if (name === 'upgradeField') {
+    await action('upgradeField', { plotId: Number(btn.dataset.plot) });
+  } else if (name === 'buyTool') {
+    await action('buyTool', { toolId: btn.dataset.tool });
+  } else if (name === 'toggleTool') {
+    await action('toggleTool', { toolId: btn.dataset.tool });
+  } else if (name === 'buyPower') {
+    await action('buyPower');
   }
 });
